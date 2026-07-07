@@ -1,4 +1,4 @@
-import { derive } from './depth.js';
+import { derive, parseUnitScalar } from './depth.js';
 
 function pickBandModifier(intensity, modifiers) {
   if (intensity == null) return null;
@@ -8,21 +8,33 @@ function pickBandModifier(intensity, modifiers) {
   return modifiers[modifiers.length - 1] ?? null;
 }
 
-function phraseOf(axis, id) {
-  if (!axis || id == null) return null;
-  return axis.byId.get(id)?.phrase ?? null;
+// A value's prompt text: prefer atomic `tokens` (Phase D) over a legacy `phrase`.
+function textOfValue(v) {
+  if (!v) return null;
+  if (Array.isArray(v.tokens) && v.tokens.length > 0) return v.tokens.join(', ');
+  return v.phrase ?? null;
 }
 
-function effectiveBiomass(selection, depthDerived) {
-  const manual = selection.biomass;
-  if (manual == null || manual === '') return { value: depthDerived, source: 'depth' };
-  const n = Number(manual);
-  if (Number.isNaN(n)) return { value: depthDerived, source: 'depth' };
-  return { value: Math.max(0, Math.min(1, n)), source: 'manual' };
+function phraseOf(axis, id) {
+  if (!axis || id == null) return null;
+  const v = axis.byId.get(id);
+  return v ? textOfValue(v) : null;
+}
+
+// Effective value for a unit-interval driver: manual override wins when valid,
+// otherwise fall back to the derived/default value (invalid overrides are ignored
+// here — the validator reports them; under `force` we degrade gracefully).
+function effectiveScalar(value, fallback, fallbackSource) {
+  const p = parseUnitScalar(value);
+  if (!p.present || !p.valid || p.value == null) return { value: fallback, source: fallbackSource };
+  return { value: p.value, source: 'manual' };
 }
 
 export function buildPrompt(selection, config) {
-  const { axes, baseStyle, rules, anomalyModifiers, thermalModifiers, biomassModifiers } = config;
+  const {
+    axes, baseStyle, rules,
+    anomalyModifiers, thermalModifiers, biomassModifiers, artifactModifiers,
+  } = config;
   const depth = Number(selection.depth);
   const derived = derive(depth, rules);
 
@@ -33,26 +45,30 @@ export function buildPrompt(selection, config) {
   const conditionPhrase = phraseOf(axes.condition, selection.condition);
   const materialPhrase  = phraseOf(axes.material,  selection.material);
   const occupantPhrase  = phraseOf(axes.occupant,  selection.occupant);
+  const occupancyPhrase = phraseOf(axes.occupancy, selection.occupancy);
   const anomalyMod      = pickBandModifier(derived.anomalyIntensity, anomalyModifiers);
   const thermalMod      = derived.thermalZone ? thermalModifiers[derived.thermalZone] : null;
 
-  // Biomass is a separate scalar driver (env.md §12 — mutated dwarven bio-reactors
-  // live in high-anomaly zones). It defaults to the depth-derived value but can be
-  // overridden per scene via selection.biomass.
-  const bio = effectiveBiomass(selection, derived.biomassIntensity);
+  // Biomass — depth-derived by default (env.md §12), overridable per scene.
+  const bio = effectiveScalar(selection.biomass, derived.biomassIntensity, 'depth');
   const biomassMod = pickBandModifier(bio.value, biomassModifiers ?? []);
 
-  // Effective derived values (reflect manual biomass override for UI/sidecar).
+  // Artifact density — a purely authored dial (LevelProfile.ArtifactDensity is not a
+  // depth formula), so it defaults to 0 and is set manually.
+  const art = effectiveScalar(selection.artifact, 0, 'default');
+  const artifactMod = pickBandModifier(art.value, artifactModifiers ?? []);
+
   const derivedOut = {
     ...derived,
     biomassIntensity: bio.value,
     biomassSource: bio.source,
+    artifactIntensity: art.value,
+    artifactSource: art.source,
   };
 
-  // Ordered sections — single source of truth for prompt assembly.
-  // PromptOptimizer works over this structure (conflict rules / dedup / ordering)
-  // instead of parsing the flat string. Text is trimmed here so downstream
-  // recomposition is a structural pass-through, not an accidental one.
+  // Ordered sections — single source of truth. PromptOptimizer works over this
+  // structure (conflict rules / dedup / ordering). Text is trimmed here so
+  // downstream recomposition is a structural pass-through.
   const sections = [
     { key: 'camera',         text: cameraPhrase },
     { key: 'lighting',       text: baseStyle.lightingDirective },
@@ -62,7 +78,9 @@ export function buildPrompt(selection, config) {
     { key: 'condition',      text: conditionPhrase },
     { key: 'material',       text: materialPhrase },
     { key: 'biomass',        text: biomassMod?.phrase ?? null },
+    { key: 'artifact',       text: artifactMod?.phrase ?? null },
     { key: 'occupant',       text: occupantPhrase },
+    { key: 'occupancy',      text: occupancyPhrase },
     { key: 'thermal',        text: thermalMod?.phrase ?? null },
     { key: 'anomaly',        text: anomalyMod?.phrase ?? null },
     { key: 'baseStyle',      text: baseStyle.positive },
@@ -85,9 +103,11 @@ export function buildPrompt(selection, config) {
       condition: conditionPhrase,
       material:  materialPhrase,
       biomass:   biomassMod?.phrase ?? null,
+      artifact:  artifactMod?.phrase ?? null,
       spaceType: spacePhrase,
       origin:    originPhrase,
       occupant:  occupantPhrase,
+      occupancy: occupancyPhrase,
       thermal:   thermalMod?.phrase ?? null,
       anomaly:   anomalyMod?.phrase ?? null,
       baseStyle: baseStyle.positive,

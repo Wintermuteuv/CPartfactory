@@ -16,8 +16,9 @@ async function loadJson(path) {
 async function loadJsonOptional(path, fallback) {
   try {
     return await loadJson(path);
-  } catch {
-    return fallback;
+  } catch (err) {
+    if (err && err.code === 'ENOENT') return fallback; // absent is fine
+    throw err; // a malformed file must fail loudly, not silently disable rules
   }
 }
 
@@ -40,6 +41,7 @@ export async function loadAxesConfig() {
     occupant:  indexAxis(axes.axes.occupant),
     camera:    indexAxis(axes.axes.camera ?? { values: [] }),
     condition: indexAxis(axes.axes.condition ?? { values: [] }),
+    occupancy: indexAxis(axes.axes.occupancy ?? { values: [] }),
   };
 
   return {
@@ -51,6 +53,7 @@ export async function loadAxesConfig() {
     depth: axes.depth,
     anomalyModifiers: [...axes.anomalyModifiers].sort((a, b) => a.max - b.max),
     biomassModifiers: [...(axes.biomassModifiers ?? [])].sort((a, b) => a.max - b.max),
+    artifactModifiers: [...(axes.artifactModifiers ?? [])].sort((a, b) => a.max - b.max),
     thermalModifiers: axes.thermalModifiers ?? {},
   };
 }

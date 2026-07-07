@@ -19,6 +19,12 @@
       "when": { "thermalZone": ["Cooling", "DeepFreeze"] },
       "removeSections": ["biomass"],
       "note": "органическая порча (мутировавшие биореакторы) не расцветает в холодных зонах (env.md §8 Organic forbidden, §12)"
+    },
+    {
+      "id": "natural-no-artifacts",
+      "when": { "origin": ["Natural"] },
+      "removeSections": ["artifact"],
+      "note": "в нетронутых природных пещерах нет гномьих артефактов/машинерии (env.md §2.3)"
     }
   ]
 }

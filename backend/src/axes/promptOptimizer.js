@@ -24,7 +24,9 @@ export const CANONICAL_ORDER = [
   'condition',
   'material',
   'biomass',
+  'artifact',
   'occupant',
+  'occupancy',
   'thermal',
   'anomaly',
   'baseStyle',
@@ -187,9 +189,11 @@ function optimizeSDXL(built, selection, config) {
   const notes = [];
   const ctx = {
     ...selection,
+    depth: Number(selection.depth), // normalize: rules may compare numeric ranges
     thermalZone: built.derived?.thermalZone ?? null,
     anomalyIntensity: built.derived?.anomalyIntensity ?? null,
     biomassIntensity: built.derived?.biomassIntensity ?? null,
+    artifactIntensity: built.derived?.artifactIntensity ?? null,
   };
 
   let sections = cloneSections(built.sections);
@@ -205,7 +209,7 @@ function optimizeSDXL(built, selection, config) {
     positive,
     sections,
     notes,
-    optimizer: { model: 'sdxl', version: 2, applied: notes.map((n) => n.stage) },
+    optimizer: { model: 'sdxl', version: 2, applied: [...new Set(notes.map((n) => n.stage))] },
   };
 }
 

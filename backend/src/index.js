@@ -64,7 +64,15 @@ app.post('/axes/validate', async (req) => {
 app.post('/prompt/preview', async (req) => {
   const selection = req.body ?? {};
   const validation = validateCombination(selection, axesConfig);
-  const prompt = validation.ok ? optimize(buildPrompt(selection, axesConfig), selection, axesConfig) : null;
+  // Build the prompt even for invalid combinations: the builder tolerates missing
+  // axes / out-of-range depth, and the UI needs a preview that matches what a
+  // force-generate would actually send. Validity is signalled separately.
+  let prompt = null;
+  try {
+    prompt = optimize(buildPrompt(selection, axesConfig), selection, axesConfig);
+  } catch (err) {
+    req.log?.warn({ err }, 'preview build failed');
+  }
   return { validation, prompt };
 });
 
@@ -101,7 +109,8 @@ app.post('/generate', async (req, reply) => {
   const body = req.body ?? {};
   const force = body.force === true;
 
-  let positive = body.positive;
+  // treat a blank/whitespace manual prompt as unset so axes still drive generation
+  let positive = (typeof body.positive === 'string' && body.positive.trim() !== '') ? body.positive : undefined;
   let negative = body.negative;
   let axesPayload = null;
   let derivedPayload = null;

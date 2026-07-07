@@ -489,6 +489,10 @@
             <select id="ax-occupant"></select>
           </div>
           <div class="field">
+            <label>Occupancy <span class="hint">обжитость</span></label>
+            <select id="ax-occupancy"></select>
+          </div>
+          <div class="field">
             <label>Lighting</label>
             <select id="ax-lighting"></select>
           </div>
@@ -509,6 +513,10 @@
               </label>
               <input type="range" id="ax-biomass" min="0" max="1" step="0.05" value="0" disabled />
             </div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Artifacts <span class="hint" id="art-value">0.00</span></label>
+            <input type="range" id="ax-artifact" min="0" max="1" step="0.05" value="0" />
           </div>
         </div>
 
@@ -592,6 +600,7 @@
             <button id="btn-rebuild" type="button" title="Rebuild from axes, discard manual edits">rebuild from axes</button>
           </div>
           <textarea id="prompt-positive" spellcheck="false" placeholder="select axes to build a prompt…"></textarea>
+          <div id="opt-notes" style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5;"></div>
           <details>
             <summary>negative prompt</summary>
             <textarea id="prompt-negative" spellcheck="false" style="min-height:60px;margin-top:6px;"></textarea>
@@ -738,6 +747,8 @@
           lighting:  $('ax-lighting').value,
           camera:    $('ax-camera').value,
           condition: $('ax-condition').value,
+          occupancy: $('ax-occupancy').value,
+          artifact:  Number($('ax-artifact').value),
           depth:     Number($('ax-depth').value),
         };
         if (!$('bio-auto').checked) axes.biomass = Number($('ax-biomass').value);
@@ -768,6 +779,7 @@
         populateSelect($('ax-lighting'),  data.axes.lighting.values,  'Torches');
         if (data.axes.camera)    populateSelect($('ax-camera'),    data.axes.camera.values,    'EyeLevel');
         if (data.axes.condition) populateSelect($('ax-condition'), data.axes.condition.values, 'Worn');
+        if (data.axes.occupancy) populateSelect($('ax-occupancy'), data.axes.occupancy.values, 'OldTraces');
         $('ax-depth').min = data.depth.min;
         $('ax-depth').max = data.depth.max;
         $('ax-depth').value = -3;
@@ -800,6 +812,23 @@
         } else {
           $('bio-value').textContent = `manual · ${Number($('ax-biomass').value).toFixed(2)}`;
         }
+      }
+
+      function renderOptNotes(notes) {
+        const el = $('opt-notes');
+        if (!Array.isArray(notes) || notes.length === 0) { el.textContent = ''; return; }
+        const removed = notes.filter((n) => n.stage === 'conflict' && n.action === 'remove').map((n) => n.removed);
+        const dropped = notes.filter((n) => n.action === 'removeSection').map((n) => n.section);
+        const dedup = notes.filter((n) => n.stage === 'dedupe').length;
+        const boost = notes.some((n) => n.stage === 'lightBoost');
+        const warns = notes.filter((n) => n.stage === 'warning').map((n) => n.message);
+        const bits = [];
+        if (removed.length) bits.push(`removed: ${removed.join('; ')}`);
+        if (dropped.length) bits.push(`suppressed: ${dropped.join(', ')}`);
+        if (dedup) bits.push(`dedup ×${dedup}`);
+        if (boost) bits.push('near-dark boost');
+        for (const w of warns) bits.push(`⚠ ${w}`);
+        el.innerHTML = bits.length ? `<b>optimizer:</b> ${escapeHtml(bits.join(' · '))}` : '';
       }
 
       function renderValidation(validation) {
@@ -850,6 +879,7 @@
           }
           $('prompt-negative').placeholder = data.prompt.negative;
         }
+        renderOptNotes(data.prompt?.notes);
         updateGenerateButton();
       }
 
@@ -1184,9 +1214,13 @@
       const debouncedPreview = debounce(refreshPreview, 200);
 
       function wireEvents() {
-        for (const id of ['ax-material', 'ax-spaceType', 'ax-origin', 'ax-occupant', 'ax-lighting', 'ax-camera', 'ax-condition']) {
+        for (const id of ['ax-material', 'ax-spaceType', 'ax-origin', 'ax-occupant', 'ax-lighting', 'ax-camera', 'ax-condition', 'ax-occupancy']) {
           $(id).addEventListener('change', () => debouncedPreview());
         }
+        $('ax-artifact').addEventListener('input', () => {
+          $('art-value').textContent = Number($('ax-artifact').value).toFixed(2);
+          debouncedPreview();
+        });
         $('ax-depth').addEventListener('input', () => {
           $('depth-value').textContent = $('ax-depth').value;
           debouncedPreview();

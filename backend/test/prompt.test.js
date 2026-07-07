@@ -119,3 +119,83 @@ test('validator: new axes are optional (missing is fine)', () => {
   const v = validateCombination({ ...noFine, depth: -3 }, cfg);
   assert.ok(v.ok, JSON.stringify(v.errors));
 });
+
+// ---- A6 hardening ----
+
+test('A6: validator rejects junk biomass/artifact, accepts numbers', () => {
+  for (const bad of [true, [], {}, 2, -0.1]) {
+    const v = validateCombination(sel({ biomass: bad }), cfg);
+    assert.ok(v.errors.some((e) => e.rule === 'biomass-out-of-range'), `should reject ${JSON.stringify(bad)}`);
+  }
+  assert.ok(validateCombination(sel({ biomass: 0.5 }), cfg).ok);
+  assert.ok(validateCombination(sel({ artifact: 0.5 }), cfg).ok);
+  // blank/whitespace = no override (ignored, not an error) → falls back to depth
+  assert.ok(validateCombination(sel({ biomass: '   ' }), cfg).ok);
+  assert.equal(buildPrompt(sel({ depth: -50, biomass: '   ' }), cfg).derived.biomassSource, 'depth');
+});
+
+test('A6: builder ignores invalid biomass override (falls back to depth)', () => {
+  const s = sel({ depth: -50, biomass: true }); // invalid → depth-derived
+  const built = buildPrompt(s, cfg);
+  assert.equal(built.derived.biomassSource, 'depth');
+});
+
+test('A6: builder tolerates missing axes without throwing (preview path)', () => {
+  const built = buildPrompt({ depth: -20 }, cfg); // no material/space/origin/occupant
+  const opt = optimize(built, { depth: -20 }, cfg);
+  assert.ok(typeof opt.positive === 'string' && opt.positive.length > 0);
+});
+
+test('A6: builder section order matches CANONICAL_ORDER directly', () => {
+  const s = sel({ depth: -40, occupant: 'DwarvenRemains', occupancy: 'Infested', artifact: 0.8, camera: 'EyeLevel' });
+  const keys = buildPrompt(s, cfg).sections.map((x) => x.key);
+  let idx = -1;
+  for (const k of keys) {
+    const at = CANONICAL_ORDER.indexOf(k);
+    assert.ok(at > idx, `builder emits ${k} out of canonical order`);
+    idx = at;
+  }
+});
+
+test('A3: replace action rewrites descriptors (synthetic rule)', () => {
+  const built = { positive: '', negative: '', derived: {}, sections: [{ key: 'material', text: 'rough ancient stone, bare rock' }] };
+  const cfg2 = { ...cfg, optimizerRules: { rules: [{ id: 't', when: { material: ['Stone'] }, replace: [{ from: 'ancient', to: 'primeval' }] }] } };
+  const out = optimize(built, { material: 'Stone', depth: -3 }, cfg2);
+  assert.ok(/primeval/.test(out.positive) && !/ancient/.test(out.positive));
+});
+
+test('A3: numeric range when-condition (synthetic rule)', () => {
+  const built = { positive: '', negative: '', derived: { anomalyIntensity: 0.9 }, sections: [{ key: 'anomaly', text: 'foo, bar' }] };
+  const cfg2 = { ...cfg, optimizerRules: { rules: [{ id: 'hi', when: { anomalyIntensity: { min: 0.8 } }, removeSections: ['anomaly'] }] } };
+  const out = optimize(built, { depth: -50 }, cfg2);
+  assert.ok(!out.sections.some((x) => x.key === 'anomaly'));
+});
+
+// ---- Phase C ----
+
+test('C1 occupancy: section appears; None+Infested warns; None+Abandoned ok', () => {
+  const p = optimize(buildPrompt(sel({ occupant: 'Goblins', occupancy: 'Infested', depth: -8 }), cfg), sel({ occupant: 'Goblins', occupancy: 'Infested', depth: -8 }), cfg).positive;
+  assert.ok(/infested|teeming/i.test(p));
+  assert.ok(validateCombination(sel({ occupant: 'None', occupancy: 'Infested' }), cfg).warnings.some((w) => w.rule === 'occupancy-empty-mismatch'));
+  assert.ok(!validateCombination(sel({ occupant: 'None', occupancy: 'Abandoned' }), cfg).warnings.some((w) => w.rule === 'occupancy-empty-mismatch'));
+});
+
+test('C2 artifact: present when set; suppressed for Natural; range enforced', () => {
+  const dwarven = sel({ origin: 'DwarvenTech', artifact: 0.9, depth: -20 });
+  assert.ok(/dwarven artifacts|glowing runes|machinery/i.test(optimize(buildPrompt(dwarven, cfg), dwarven, cfg).positive));
+  const natural = sel({ origin: 'Natural', artifact: 0.9, depth: -40 });
+  const nOpt = optimize(buildPrompt(natural, cfg), natural, cfg);
+  assert.ok(!/dwarven artifacts|humming machinery|walls of glowing runes/i.test(nOpt.positive));
+  assert.ok(nOpt.notes.some((n) => n.rule === 'natural-no-artifacts'));
+  assert.ok(validateCombination(sel({ artifact: 5 }), cfg).errors.some((e) => e.rule === 'artifact-out-of-range'));
+});
+
+// ---- Phase D ----
+
+test('D: atomized Stone uses tokens and dedups cleanly', () => {
+  const s = sel({ material: 'Stone', depth: -3 });
+  const p = optimize(buildPrompt(s, cfg), s, cfg).positive;
+  assert.ok(/layered rock strata/.test(p), 'atomic Stone token present');
+  const descriptors = p.split(',').map((d) => d.trim().toLowerCase());
+  assert.equal(descriptors.length, new Set(descriptors).size);
+});

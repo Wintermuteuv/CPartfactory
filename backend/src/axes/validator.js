@@ -1,4 +1,4 @@
-import { derive, depthInRange } from './depth.js';
+import { derive, depthInRange, parseUnitScalar } from './depth.js';
 
 function violation(rule, message, fields = {}) {
   return { severity: 'error', rule, message, ...fields };
@@ -10,8 +10,8 @@ function warning(rule, message, fields = {}) {
 
 export function validateAxisIds(selection, config) {
   const issues = [];
-  const OPTIONAL = new Set(['lighting', 'camera', 'condition']);
-  for (const axisKey of ['material', 'spaceType', 'origin', 'occupant', 'lighting', 'camera', 'condition']) {
+  const OPTIONAL = new Set(['lighting', 'camera', 'condition', 'occupancy']);
+  for (const axisKey of ['material', 'spaceType', 'origin', 'occupant', 'lighting', 'camera', 'condition', 'occupancy']) {
     const value = selection[axisKey];
     if (!value) {
       if (OPTIONAL.has(axisKey)) continue; // optional fine-tuning axes
@@ -77,22 +77,31 @@ export function validateCombination(selection, config) {
     }
   }
 
-  if (origin && selection.lighting) {
+  if (origin) {
+    // validate the EFFECTIVE lighting (builder defaults to Torches when unset)
+    const effLighting = selection.lighting ?? 'Torches';
     const lw = rules.lightingByOrigin?.[origin];
-    if (lw?.warn?.includes(selection.lighting)) {
+    if (lw?.warn?.includes(effLighting)) {
       issues.push(warning('lighting-origin-mismatch',
-        `Lighting "${selection.lighting}" is implausible for origin "${origin}": ${lw.reason ?? ''}`,
-        { axis: 'lighting', value: selection.lighting, origin }));
+        `Lighting "${effLighting}" is implausible for origin "${origin}": ${lw.reason ?? ''}`,
+        { axis: 'lighting', value: effLighting, origin }));
     }
   }
 
-  if (selection.biomass != null && selection.biomass !== '') {
-    const b = Number(selection.biomass);
-    if (Number.isNaN(b) || b < 0 || b > 1) {
-      issues.push(violation('biomass-out-of-range',
-        `biomass override must be a number in [0, 1], got ${selection.biomass}`,
-        { axis: 'biomass', value: selection.biomass }));
+  for (const axisKey of ['biomass', 'artifact']) {
+    const p = parseUnitScalar(selection[axisKey]);
+    if (p.present && !p.valid) {
+      issues.push(violation(`${axisKey}-out-of-range`,
+        `${axisKey} override must be a number in [0, 1], got ${JSON.stringify(selection[axisKey])}`,
+        { axis: axisKey, value: selection[axisKey] }));
     }
+  }
+
+  if (selection.occupancy && (occupant === 'None' || occupant == null) &&
+      ['Active', 'Infested'].includes(selection.occupancy)) {
+    issues.push(warning('occupancy-empty-mismatch',
+      `Occupancy "${selection.occupancy}" contradicts Occupant "None" — no inhabitants to leave active traces`,
+      { axis: 'occupancy', value: selection.occupancy }));
   }
 
   if (selection.condition) {

@@ -52,4 +52,20 @@ export function derive(depth, rules) {
   };
 }
 
+// Shared contract for unit-interval override inputs (biomass, artifact, …).
+// Returns { present, valid, value }:
+//   present=false → no override supplied (use derived/default)
+//   present=true, valid=false → supplied but rejected (bool/array/object/NaN/out-of-range)
+//   present=true, valid=true → usable number in [0,1]
+export function parseUnitScalar(value) {
+  if (value == null) return { present: false, valid: true, value: null };
+  if (typeof value === 'boolean' || typeof value === 'object') return { present: true, valid: false, value: null };
+  const str = typeof value === 'string' ? value.trim() : value;
+  if (str === '') return { present: false, valid: true, value: null };
+  const n = Number(str);
+  if (!Number.isFinite(n)) return { present: true, valid: false, value: null };
+  if (n < 0 || n > 1) return { present: true, valid: false, value: n };
+  return { present: true, valid: true, value: n };
+}
+
 export { depthInRange };

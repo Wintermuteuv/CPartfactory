@@ -31,7 +31,7 @@
       "label": "Material",
       "description": "природа породы вокруг (env.md §2.1)",
       "values": [
-        { "id": "Stone",        "label": "Stone",        "phrase": "rough ancient stone, weathered grey rock surfaces, layered rock strata, dim torchlight on bare rock" },
+        { "id": "Stone",        "label": "Stone",        "tokens": ["rough ancient stone", "weathered grey rock surfaces", "layered rock strata", "bare rock under dim torchlight"], "_note": "Phase D pilot — атомарные tokens вместо phrase; builder предпочитает tokens. Остальные значения мигрируются итеративно на живых генерациях." },
         { "id": "Ice",          "label": "Ice",          "phrase": "ice-encrusted walls, glistening frost, frozen surfaces reflecting warm torchlight, hanging icicles, frozen mist in the air" },
         { "id": "DwarvenMetal", "label": "Dwarven Metal","phrase": "dwarven forged metal plating, riveted iron walls, blackened brass fittings, oxidized copper conduits, industrial dwarven craftsmanship" },
         { "id": "Organic",      "label": "Organic",      "phrase": "wet biological growths, fleshy organic walls, pulsing biomass, dripping membranes, mutated dwarven bio-reactors" },
@@ -96,6 +96,16 @@
         { "id": "BattleDamaged", "label": "Battle-Damaged", "phrase": "battle-scarred, scorch marks and impact craters, shattered fixtures, signs of violent fighting" },
         { "id": "Overgrown",     "label": "Overgrown",      "phrase": "overtaken by encrustation, reclaimed by the underground, creeping mineral and fungal deposits over everything" }
       ]
+    },
+    "occupancy": {
+      "label": "Occupancy",
+      "description": "насколько обжито пространство и свежесть следов (ecosystem.md); ортогональна Occupant (кто именно живёт)",
+      "values": [
+        { "id": "Abandoned", "label": "Abandoned",  "phrase": "long abandoned, no recent presence, dust settled thick and undisturbed" },
+        { "id": "OldTraces", "label": "Old Traces", "phrase": "old faded traces of past habitation, long-cold hearths, decayed forgotten leavings" },
+        { "id": "Active",    "label": "Active",      "phrase": "signs of active habitation, recently disturbed dust, fresh tracks and leavings" },
+        { "id": "Infested",  "label": "Infested",    "phrase": "densely infested, teeming signs of life, layered nests and trampled paths everywhere" }
+      ]
     }
   },
   "anomalyModifiers": [
@@ -115,5 +125,12 @@
     { "max": 0.399, "phrase": "faint organic film in the crevices, patches of pale fungal growth" },
     { "max": 0.699, "phrase": "creeping fleshy growths spreading over the surfaces, pulsing biomass in the cracks, mutated dwarven bio-reactor residue" },
     { "max": 1.0,   "phrase": "rampant organic corruption engulfing the walls, throbbing masses of biomass, mutated fleshy intrusions, dripping membranes" }
+  ],
+  "_artifactNote": "Artifact — скалярная ось плотности гномьих артефактов/техно-свечения (LevelProfile.ArtifactDensity, magic_and_artifacts.md). Чисто авторская: default 0, задаётся вручную (не выводится из глубины). Подавляется при Origin=Natural правилом optimizer_rules.json.",
+  "artifactModifiers": [
+    { "max": 0.099, "phrase": "" },
+    { "max": 0.399, "phrase": "a few scattered dwarven artifacts, faint glowing runes on an idle device" },
+    { "max": 0.699, "phrase": "numerous dwarven artifacts and machinery, glowing runic inscriptions, active mechanisms" },
+    { "max": 1.0,   "phrase": "dense concentration of dwarven artifacts, banks of humming machinery, walls of glowing runes, powerful active devices" }
   ]
 }
