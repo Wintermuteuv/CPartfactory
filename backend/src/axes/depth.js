@@ -23,10 +23,32 @@ export function deriveAnomalyIntensity(depth, rules) {
   return null;
 }
 
+export function deriveBiomassIntensity(depth, rules) {
+  // Biomass tracks anomaly by default (env.md §12 — mutated dwarven bio-reactors
+  // exist only in high-anomaly zones), but is exposed as its own derived value so
+  // it can be overridden per scene in the builder.
+  if (Array.isArray(rules.biomassIntensity)) {
+    const hit = rules.biomassIntensity.find((b) => depthInRange(depth, b.range));
+    if (hit) {
+      if (typeof hit.value === 'number') return hit.value;
+      if (Array.isArray(hit.valueRange)) {
+        const [shallow, deep] = hit.range;
+        const span = shallow - deep;
+        const t = span === 0 ? 0 : (shallow - depth) / span;
+        const [vMin, vMax] = hit.valueRange;
+        return Math.round((vMin + t * (vMax - vMin)) * 100) / 100;
+      }
+    }
+    return null;
+  }
+  return deriveAnomalyIntensity(depth, rules);
+}
+
 export function derive(depth, rules) {
   return {
     thermalZone: deriveThermalZone(depth, rules),
     anomalyIntensity: deriveAnomalyIntensity(depth, rules),
+    biomassIntensity: deriveBiomassIntensity(depth, rules),
   };
 }
 

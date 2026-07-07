@@ -29,7 +29,10 @@ npm start
 
 ## 2. Базовый цикл генерации
 
-1. Слева в **Axes** выбери: Material / SpaceType / Origin / Occupant
+1. Слева в **Axes** выбери: Camera / Material / SpaceType / Origin / Condition / Occupant / Lighting
+   - **Camera** — ракурс (чисто визуальная ось для мудборда, без валидации)
+   - **Condition** — степень сохранности (Pristine…Battle-Damaged…Overgrown), ортогональна Origin
+   - **Biomass** — скаляр «органической порчи». `auto` = следует за глубиной (зеркалит anomaly, env.md §12); сними галку → ручной слайдер 0…1. В холодных зонах (Cooling/DeepFreeze) подавляется автоматически.
 2. Подвинь слайдер **Depth** (-60…-1). Снизу появятся производные:
    - **Zone** — `Cooling` / `DeepFreeze` / `Reheating`
    - **Anomaly** — 0.00…1.00 + цветная шкала
@@ -68,9 +71,10 @@ npm start
 art-factory/
 ├─ backend/
 │  ├─ config/
-│  │  ├─ axes.json          # фразы осей + базовый стиль + anomaly/thermal модификаторы
-│  │  ├─ axis_rules.json    # depth-bands, термальные ограничения, depth-диапазоны origin/occupant
-│  │  └─ coverage.json      # чек-лист сцен (auto-edit через UI или вручную)
+│  │  ├─ axes.json            # фразы осей + базовый стиль + anomaly/thermal/biomass модификаторы
+│  │  ├─ axis_rules.json      # depth-bands, термальные/anomaly/biomass, depth-диапазоны, condition-warn
+│  │  ├─ optimizer_rules.json # правила слоя PromptOptimizer (remove/removeSections/replace по условиям)
+│  │  └─ coverage.json        # чек-лист сцен (auto-edit через UI или вручную)
 │  └─ src/
 │     ├─ index.js                       # Fastify, все маршруты
 │     ├─ config.js                      # env/defaults
@@ -81,9 +85,10 @@ art-factory/
 │     │  ├─ workflow.js                 # загрузка JSON-шаблона, резолв нод по class_type, applyParams
 │     │  └─ wsclient.js                 # нативный WebSocket к /ws с reconnect
 │     ├─ axes/
-│     │  ├─ loader.js  depth.js
+│     │  ├─ loader.js  depth.js         # depth → thermalZone / anomalyIntensity / biomassIntensity
 │     │  ├─ validator.js                # combination check → {errors, warnings, derived}
-│     │  └─ promptBuilder.js            # space + origin + material + occupant + thermal + anomaly + baseStyle
+│     │  ├─ promptBuilder.js            # оси → упорядоченный sections[] (единый источник правды)
+│     │  └─ promptOptimizer.js          # SDXL-слой: conflict-rules → dedup → NearDark boost → canonical order
 │     └─ coverage/
 │        ├─ matcher.js                  # sidecar vs item match
 │        ├─ scanner.js                  # скан output/*.json → counts
@@ -107,8 +112,9 @@ art-factory/
   "prompt_positive": "…",
   "prompt_negative": "…",
   "seed": 123456789,
-  "axes": { "material": "Stone", "spaceType": "Corridor", "origin": "DwarvenTech", "occupant": "None", "depth": -3 },
-  "derived": { "thermalZone": "Cooling", "anomalyIntensity": 0 },
+  "axes": { "material": "Stone", "spaceType": "Corridor", "origin": "DwarvenTech", "occupant": "None", "camera": "EyeLevel", "condition": "Worn", "depth": -3 },
+  "derived": { "thermalZone": "Cooling", "anomalyIntensity": 0, "biomassIntensity": 0, "biomassSource": "depth" },
+  "optimizer": { "model": "sdxl", "version": 2, "applied": ["conflict"], "notes": [ { "stage": "conflict", "rule": "natural-dry", "action": "remove", "removed": "water-eroded rock contours" } ] },
   "params": { "steps": 28, "cfg": 6.5, "sampler": "dpmpp_2m", "scheduler": "karras", "width": 1024, "height": 1024, "batchSize": 1 },
   "checkpoint": "juggernautXL_ragnarokBy.safetensors",
   "styleVersion": "none",
@@ -150,7 +156,9 @@ curl -X POST http://127.0.0.1:5174/generate `
 ## 7. Редактирование конфигов
 
 - **`axes.json`** — фразы для промпта по каждому значению осей. Подбираются итеративно с Иваном на живых генерациях.
-- **`axis_rules.json`** — депт-диапазоны и термальные правила. Менять при изменениях в `Design/fundamentals/environment.md`.
+- **`axis_rules.json`** — депт-диапазоны, термальные/anomaly/biomass бэнды, condition-warn. Менять при изменениях в `Design/fundamentals/environment.md`.
+- **`optimizer_rules.json`** — правила разрешения конфликтов слоя PromptOptimizer: `when` (условия на оси + derived), действия `remove` (по подстроке) / `removeSections` (по key) / `replace`. Здесь чинятся кросс-осевые противоречия без правки кода.
+- **Тесты:** `npm test` в `backend/` (node:test) — паритет/дедуп/конфликты/оси. Гонять после правок конфигов или оптимайзера.
 - **`coverage.json`** — пункты чек-листа. Удобнее через UI (`+ ADD ITEM`), но можно и руками.
 - **`CursedPit Workflow.json`** — workflow ComfyUI в API-формате. Чтобы заменить — пересохранить из ComfyUI через **Settings → Enable Dev Mode → Save (API Format)**. Резолвер нод работает по `class_type`, не по ID — workflow можно пересобирать.
 

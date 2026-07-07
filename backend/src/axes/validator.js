@@ -10,10 +10,11 @@ function warning(rule, message, fields = {}) {
 
 export function validateAxisIds(selection, config) {
   const issues = [];
-  for (const axisKey of ['material', 'spaceType', 'origin', 'occupant', 'lighting']) {
+  const OPTIONAL = new Set(['lighting', 'camera', 'condition']);
+  for (const axisKey of ['material', 'spaceType', 'origin', 'occupant', 'lighting', 'camera', 'condition']) {
     const value = selection[axisKey];
     if (!value) {
-      if (axisKey === 'lighting') continue; // optional, defaults to Torches in promptBuilder
+      if (OPTIONAL.has(axisKey)) continue; // optional fine-tuning axes
       issues.push(violation('missing-axis', `${axisKey} is required`, { axis: axisKey }));
       continue;
     }
@@ -82,6 +83,25 @@ export function validateCombination(selection, config) {
       issues.push(warning('lighting-origin-mismatch',
         `Lighting "${selection.lighting}" is implausible for origin "${origin}": ${lw.reason ?? ''}`,
         { axis: 'lighting', value: selection.lighting, origin }));
+    }
+  }
+
+  if (selection.biomass != null && selection.biomass !== '') {
+    const b = Number(selection.biomass);
+    if (Number.isNaN(b) || b < 0 || b > 1) {
+      issues.push(violation('biomass-out-of-range',
+        `biomass override must be a number in [0, 1], got ${selection.biomass}`,
+        { axis: 'biomass', value: selection.biomass }));
+    }
+  }
+
+  if (selection.condition) {
+    const cr = rules.conditionRules?.[selection.condition];
+    if (cr?.warnAboveAnomaly != null && derived.anomalyIntensity != null &&
+        derived.anomalyIntensity > cr.warnAboveAnomaly) {
+      issues.push(warning('condition-anomaly-mismatch',
+        `Condition "${selection.condition}" is implausible at anomaly ${derived.anomalyIntensity.toFixed(2)}: ${cr.reason ?? ''}`,
+        { axis: 'condition', value: selection.condition, anomalyIntensity: derived.anomalyIntensity }));
     }
   }
 

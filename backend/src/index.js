@@ -105,6 +105,7 @@ app.post('/generate', async (req, reply) => {
   let negative = body.negative;
   let axesPayload = null;
   let derivedPayload = null;
+  let optimizerPayload = null;
   let validation = null;
 
   if (body.axes && typeof body.axes === 'object') {
@@ -117,6 +118,7 @@ app.post('/generate', async (req, reply) => {
     negative = negative ?? built.negative;
     axesPayload = body.axes;
     derivedPayload = built.derived;
+    optimizerPayload = built.optimizer ? { ...built.optimizer, notes: built.notes ?? [] } : null;
   }
 
   if (!positive || typeof positive !== 'string') {
@@ -138,6 +140,7 @@ app.post('/generate', async (req, reply) => {
       ckpt: body.ckpt,
       axes: axesPayload,
       derived: derivedPayload,
+      optimizer: optimizerPayload,
       stage: body.stage ?? 'draft',
       logger: req.log,
     });

@@ -17,6 +17,18 @@
     { "range": [-45, -60], "valueRange": [0.8, 1.0] }
   ],
 
+  "biomassIntensity": [
+    { "range": [-1, -11],  "value": 0 },
+    { "range": [-12, -31], "valueRange": [0.1, 0.3] },
+    { "range": [-32, -34], "value": 0.4 },
+    { "range": [-35, -44], "valueRange": [0.5, 0.7] },
+    { "range": [-45, -60], "valueRange": [0.8, 1.0] }
+  ],
+
+  "conditionRules": {
+    "Pristine": { "warnAboveAnomaly": 0.4, "reason": "pristine construction is implausible in high-anomaly zones where reality itself is unstable" }
+  },
+
   "materialByThermalZone": {
     "Cooling":    { "forbidden": ["Organic"],            "softMinDepth": { "Ice": -15 } },
     "DeepFreeze": { "forbidden": ["Organic", "Crystal"] },

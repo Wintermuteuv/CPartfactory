@@ -73,6 +73,29 @@
         { "id": "DwarvenRemains",  "label": "Dwarven Remains",  "phrase": "long-dead dwarven bodies, scattered artifacts, abandoned journals, dust-covered tools, signs of an ancient evacuation" },
         { "id": "DeepHostile",     "label": "Deep Hostile",     "phrase": "alien deep-hostile presence, twisted nests, biological residue, unnatural markings, fragments of monstrous moltings" }
       ]
+    },
+    "camera": {
+      "label": "Camera",
+      "description": "ракурс и кадрирование сцены — чисто визуальная ось для мудборда, не влияет на лор",
+      "values": [
+        { "id": "EstablishingWide", "label": "Establishing Wide", "phrase": "wide establishing shot, expansive view of the whole space, deep receding perspective" },
+        { "id": "EyeLevel",         "label": "Eye Level",         "phrase": "eye-level first-person vantage, standing inside the space, natural human perspective" },
+        { "id": "LowAngleUp",       "label": "Low Angle Up",      "phrase": "low angle looking steeply upward, towering walls rising overhead, oppressive verticality" },
+        { "id": "HighAngleDown",    "label": "High Angle Down",   "phrase": "high angle looking down into the depths, overlook from above, strong sense of the drop below" },
+        { "id": "MaterialCloseup",  "label": "Material Close-up", "phrase": "extreme close-up of the surface, macro detail of texture and material, shallow depth of field" },
+        { "id": "Threshold",        "label": "Threshold",         "phrase": "framed through a doorway in the foreground, threshold composition, dark frame around a lit interior beyond" }
+      ]
+    },
+    "condition": {
+      "label": "Condition",
+      "description": "степень сохранности постройки/пространства (env.md §9 — изношенный/изломанный/повреждённый); ортогональна Origin",
+      "values": [
+        { "id": "Pristine",      "label": "Pristine",       "phrase": "pristine intact construction, clean precise surfaces, freshly built, no damage or wear" },
+        { "id": "Worn",          "label": "Worn",           "phrase": "worn and aged, patina of long use, scuffed surfaces, fine cracks and settled dust" },
+        { "id": "Ruined",        "label": "Ruined",         "phrase": "ruined and crumbling, collapsed sections, scattered rubble and debris, structural failure" },
+        { "id": "BattleDamaged", "label": "Battle-Damaged", "phrase": "battle-scarred, scorch marks and impact craters, shattered fixtures, signs of violent fighting" },
+        { "id": "Overgrown",     "label": "Overgrown",      "phrase": "overtaken by encrustation, reclaimed by the underground, creeping mineral and fungal deposits over everything" }
+      ]
     }
   },
   "anomalyModifiers": [
@@ -85,5 +108,12 @@
     "Cooling":    { "phrase": "cold air, thin frost on metalwork, breath condensing" },
     "DeepFreeze": { "phrase": "extreme cold, everything sheathed in ice, brittle frozen surfaces" },
     "Reheating":  { "phrase": "rising heat, faint glow of distant geothermal vents, heat-warped metal" }
-  }
+  },
+  "_biomassNote": "Biomass — скалярная ось «органической порчи» (env.md §12, мутировавшие гномьи биореакторы). По умолчанию следует за depth (см. axis_rules.json biomassIntensity, зеркалит anomaly), но перекрывается selection.biomass. Подавляется в холодных зонах правилом optimizer_rules.json.",
+  "biomassModifiers": [
+    { "max": 0.099, "phrase": "" },
+    { "max": 0.399, "phrase": "faint organic film in the crevices, patches of pale fungal growth" },
+    { "max": 0.699, "phrase": "creeping fleshy growths spreading over the surfaces, pulsing biomass in the cracks, mutated dwarven bio-reactor residue" },
+    { "max": 1.0,   "phrase": "rampant organic corruption engulfing the walls, throbbing masses of biomass, mutated fleshy intrusions, dripping membranes" }
+  ]
 }

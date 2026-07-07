@@ -6,7 +6,8 @@
   "description": "Cursed Pit Art Factory — local Node backend wrapping ComfyUI",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=20"

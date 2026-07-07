@@ -55,6 +55,7 @@ export async function generate({
   outputDir = DEFAULT_OUTPUT_DIR,
   axes = null,
   derived = null,
+  optimizer = null,
   stage = 'draft',
   logger,
 } = {}) {
@@ -115,6 +116,7 @@ export async function generate({
       seed: resolvedSeed,
       axes,
       derived,
+      optimizer,
       params: {
         steps: finalSampler.steps,
         cfg: finalSampler.cfg,

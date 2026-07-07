@@ -465,6 +465,10 @@
         <div class="card">
           <h2>Axes</h2>
           <div class="field">
+            <label>Camera <span class="hint">кадр</span></label>
+            <select id="ax-camera"></select>
+          </div>
+          <div class="field">
             <label>Material</label>
             <select id="ax-material"></select>
           </div>
@@ -475,6 +479,10 @@
           <div class="field">
             <label>Origin</label>
             <select id="ax-origin"></select>
+          </div>
+          <div class="field">
+            <label>Condition <span class="hint">сохранность</span></label>
+            <select id="ax-condition"></select>
           </div>
           <div class="field">
             <label>Occupant</label>
@@ -492,6 +500,15 @@
             <span><span class="label">Zone:</span><span id="d-zone">—</span></span>
             <span><span class="label">Anomaly:</span><span id="d-anom">—</span></span>
             <div class="anomaly-bar"><span id="d-anom-bar"></span></div>
+          </div>
+          <div class="field" style="margin-top:10px;">
+            <label>Biomass <span class="hint" id="bio-value">auto</span></label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0;white-space:nowrap;margin:0;">
+                <input type="checkbox" id="bio-auto" checked /> auto
+              </label>
+              <input type="range" id="ax-biomass" min="0" max="1" step="0.05" value="0" disabled />
+            </div>
           </div>
         </div>
 
@@ -713,14 +730,18 @@
       };
 
       function selectedAxes() {
-        return {
+        const axes = {
           material:  $('ax-material').value,
           spaceType: $('ax-spaceType').value,
           origin:    $('ax-origin').value,
           occupant:  $('ax-occupant').value,
           lighting:  $('ax-lighting').value,
+          camera:    $('ax-camera').value,
+          condition: $('ax-condition').value,
           depth:     Number($('ax-depth').value),
         };
+        if (!$('bio-auto').checked) axes.biomass = Number($('ax-biomass').value);
+        return axes;
       }
 
       function populateSelect(el, values, defaultId) {
@@ -745,6 +766,8 @@
         populateSelect($('ax-origin'),    data.axes.origin.values,    'DwarvenTech');
         populateSelect($('ax-occupant'),  data.axes.occupant.values,  'None');
         populateSelect($('ax-lighting'),  data.axes.lighting.values,  'Torches');
+        if (data.axes.camera)    populateSelect($('ax-camera'),    data.axes.camera.values,    'EyeLevel');
+        if (data.axes.condition) populateSelect($('ax-condition'), data.axes.condition.values, 'Worn');
         $('ax-depth').min = data.depth.min;
         $('ax-depth').max = data.depth.max;
         $('ax-depth').value = -3;
@@ -758,12 +781,25 @@
           $('d-zone').textContent = '—';
           $('d-anom').textContent = '—';
           $('d-anom-bar').style.width = '0%';
+          updateBiomassUI(null);
           return;
         }
         $('d-zone').textContent = derived.thermalZone ?? '—';
         const a = derived.anomalyIntensity;
         $('d-anom').textContent = a == null ? '—' : a.toFixed(2);
         $('d-anom-bar').style.width = ((a ?? 0) * 100).toFixed(1) + '%';
+        updateBiomassUI(derived);
+      }
+
+      function updateBiomassUI(derived) {
+        const auto = $('bio-auto').checked;
+        $('ax-biomass').disabled = auto;
+        if (auto) {
+          const b = derived?.biomassIntensity;
+          $('bio-value').textContent = b == null ? 'auto' : `auto · ${b.toFixed(2)}`;
+        } else {
+          $('bio-value').textContent = `manual · ${Number($('ax-biomass').value).toFixed(2)}`;
+        }
       }
 
       function renderValidation(validation) {
@@ -803,7 +839,9 @@
         const data = await res.json();
         state.currentValidation = data.validation;
         renderValidation(data.validation);
-        renderDerived(data.validation?.derived ?? null);
+        // prefer the built prompt's derived block — it reflects the effective
+        // (possibly manually-overridden) biomass value; fall back to validation.
+        renderDerived(data.prompt?.derived ?? data.validation?.derived ?? null);
 
         if (data.prompt) {
           state.currentBuiltPositive = data.prompt.positive;
@@ -1146,11 +1184,19 @@
       const debouncedPreview = debounce(refreshPreview, 200);
 
       function wireEvents() {
-        for (const id of ['ax-material', 'ax-spaceType', 'ax-origin', 'ax-occupant', 'ax-lighting']) {
+        for (const id of ['ax-material', 'ax-spaceType', 'ax-origin', 'ax-occupant', 'ax-lighting', 'ax-camera', 'ax-condition']) {
           $(id).addEventListener('change', () => debouncedPreview());
         }
         $('ax-depth').addEventListener('input', () => {
           $('depth-value').textContent = $('ax-depth').value;
+          debouncedPreview();
+        });
+        $('bio-auto').addEventListener('change', () => {
+          updateBiomassUI(state.currentValidation?.derived ?? null);
+          debouncedPreview();
+        });
+        $('ax-biomass').addEventListener('input', () => {
+          $('bio-value').textContent = `manual · ${Number($('ax-biomass').value).toFixed(2)}`;
           debouncedPreview();
         });
         $('prompt-positive').addEventListener('input', () => {

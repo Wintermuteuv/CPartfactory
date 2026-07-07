@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "_doc": "Правила слоя PromptOptimizer (A3). Каждое правило: when — условия на оси/derived (массив = один из; {min,max} = числовой диапазон; скаляр = равенство); действия: remove (убрать дескрипторы, содержащие подстроку, регистронезависимо), removeSections (убрать секции целиком по key), replace ([{from,to}] по подстроке). ctx содержит: material, spaceType, origin, occupant, lighting, camera, condition, depth, thermalZone, anomalyIntensity, biomassIntensity.",
+  "rules": [
+    {
+      "id": "natural-dry",
+      "when": { "origin": ["Natural"] },
+      "remove": ["water-eroded"],
+      "note": "природные пещеры этого мира сухие/промёрзшие — убираем водную эрозию (env.md §5, §8)"
+    },
+    {
+      "id": "cold-no-liquid-water",
+      "when": { "thermalZone": ["Cooling", "DeepFreeze"] },
+      "remove": ["water-eroded", "dripping"],
+      "note": "в зонах Cooling/DeepFreeze нет жидкой воды"
+    },
+    {
+      "id": "cold-no-biomass",
+      "when": { "thermalZone": ["Cooling", "DeepFreeze"] },
+      "removeSections": ["biomass"],
+      "note": "органическая порча (мутировавшие биореакторы) не расцветает в холодных зонах (env.md §8 Organic forbidden, §12)"
+    }
+  ]
+}
