@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "_source": "Design/fundamentals/environment.md §2 — starter phrases, refine iteratively with Ivan",
-  "_changelog": "0.2.0 (A0): Torches → wall-mounted iron; Chasm walkways сделаны origin-нейтральными; oil lanterns убраны из HumanGarrison (свет — ось lighting); organic-токен убран из max anomaly-модификатора (уходит в будущую ось Biomass)",
+  "_changelog": "0.3.0 (Phase D): все дискретные оси мигрированы с phrase на атомарные tokens (builder предпочитает tokens); модификаторы (anomaly/thermal/biomass/artifact) остаются phrase. 0.2.0 (A0): Torches → wall-mounted iron; Chasm walkways origin-нейтральны; oil lanterns убраны из HumanGarrison; organic-токен убран из max anomaly-модификатора.",
   "baseStyle": {
     "_lightingRule": "Источник света задаёт ось lighting (по умолчанию Torches). Свет ТОЛЬКО локальный — факелы, бра, дворфьи артефакты, геотермальные жилы (на Reheating). Никаких прорубов в потолке, дневного света, неба, god-rays, ambient-засветки. См. comfyui_api_integration.md §7. lightingDirective идёт первым в промпте — там у SDXL максимальный attention.",
     "lightingDirective": "deep underground world with no sun and no electricity, warm firelight the only kind of illumination, warm orange-red color temperature, most of the scene drowned in shadow, low-key chiaroscuro lighting, single visible flame as the brightest point, sharp falloff into pitch black",
@@ -19,92 +19,92 @@
       "label": "Lighting",
       "description": "источник света в кадре; в мире нет солнца и электричества — только огонь, геотермика и кристаллы",
       "values": [
-        { "id": "Torches",         "label": "Torches",          "phrase": "wall-mounted iron torches, flickering orange flames, pools of firelight against deep shadow" },
-        { "id": "DwarvenLanterns", "label": "Dwarven Lanterns", "phrase": "dwarven oil lanterns in brass housings, steady warm amber lamplight, pools of golden light" },
-        { "id": "Campfire",        "label": "Campfire",         "phrase": "small campfire on the ground, warm glow cast from below, drifting embers, thin smoke" },
-        { "id": "Geothermal",      "label": "Geothermal",       "phrase": "deep red-orange glow of geothermal vents, molten light seeping through cracks in the rock, heat shimmer" },
-        { "id": "CrystalGlow",     "label": "Crystal Glow",     "phrase": "soft warm amber radiance of luminous crystals, dim mineral glow" },
-        { "id": "NearDark",        "label": "Near Dark",        "phrase": "near-total darkness, one tiny distant flame, barely discernible silhouettes of rock" }
+        { "id": "Torches",         "label": "Torches",          "tokens": ["wall-mounted iron torches", "flickering orange flames", "pools of firelight", "deep shadow between the lights"] },
+        { "id": "DwarvenLanterns", "label": "Dwarven Lanterns", "tokens": ["dwarven oil lanterns", "brass lantern housings", "steady warm amber lamplight", "pools of golden light"] },
+        { "id": "Campfire",        "label": "Campfire",         "tokens": ["small campfire on the ground", "warm glow cast from below", "drifting embers", "thin smoke"] },
+        { "id": "Geothermal",      "label": "Geothermal",       "tokens": ["deep red-orange geothermal glow", "molten light seeping through cracks", "heat shimmer"] },
+        { "id": "CrystalGlow",     "label": "Crystal Glow",     "tokens": ["soft warm amber crystal radiance", "luminous crystals", "dim mineral glow"] },
+        { "id": "NearDark",        "label": "Near Dark",        "tokens": ["near-total darkness", "one tiny distant flame", "barely discernible rock silhouettes"] }
       ]
     },
     "material": {
       "label": "Material",
       "description": "природа породы вокруг (env.md §2.1)",
       "values": [
-        { "id": "Stone",        "label": "Stone",        "tokens": ["rough ancient stone", "weathered grey rock surfaces", "layered rock strata", "bare rock under dim torchlight"], "_note": "Phase D pilot — атомарные tokens вместо phrase; builder предпочитает tokens. Остальные значения мигрируются итеративно на живых генерациях." },
-        { "id": "Ice",          "label": "Ice",          "phrase": "ice-encrusted walls, glistening frost, frozen surfaces reflecting warm torchlight, hanging icicles, frozen mist in the air" },
-        { "id": "DwarvenMetal", "label": "Dwarven Metal","phrase": "dwarven forged metal plating, riveted iron walls, blackened brass fittings, oxidized copper conduits, industrial dwarven craftsmanship" },
-        { "id": "Organic",      "label": "Organic",      "phrase": "wet biological growths, fleshy organic walls, pulsing biomass, dripping membranes, mutated dwarven bio-reactors" },
-        { "id": "Crystal",      "label": "Crystal",      "phrase": "luminous mineral crystals embedded in the walls, faint warm amber inner glow, refractions of firelight, jagged crystal clusters" }
+        { "id": "Stone",        "label": "Stone",        "tokens": ["rough ancient stone", "weathered grey rock surfaces", "layered rock strata", "bare rock under dim torchlight"] },
+        { "id": "Ice",          "label": "Ice",          "tokens": ["ice-encrusted walls", "glistening frost", "frozen surfaces reflecting torchlight", "hanging icicles", "frozen mist in the air"] },
+        { "id": "DwarvenMetal", "label": "Dwarven Metal","tokens": ["dwarven forged metal plating", "riveted iron walls", "blackened brass fittings", "oxidized copper conduits", "industrial dwarven craftsmanship"] },
+        { "id": "Organic",      "label": "Organic",      "tokens": ["wet biological growths", "fleshy organic walls", "pulsing biomass", "dripping membranes", "mutated dwarven bio-reactors"] },
+        { "id": "Crystal",      "label": "Crystal",      "tokens": ["luminous mineral crystals in the walls", "faint warm amber inner glow", "refractions of firelight", "jagged crystal clusters"] }
       ]
     },
     "spaceType": {
       "label": "SpaceType",
       "description": "функция и геометрия пространства (env.md §2.2)",
       "values": [
-        { "id": "Corridor", "label": "Corridor", "phrase": "narrow linear corridor, flat floor, low ceiling, claustrophobic passage receding into darkness" },
-        { "id": "Hall",     "label": "Hall",     "phrase": "regular dwarven hall, balanced proportions, columned interior, structured architecture" },
-        { "id": "Shaft",    "label": "Shaft",    "phrase": "vertical shaft, rusted ladders and chains, plunging depth, vertiginous descent" },
-        { "id": "Cavern",   "label": "Cavern",   "phrase": "vast irregular cavern, uneven floor and ceiling, natural rock formations, deep shadows in distant recesses" },
-        { "id": "Maze",     "label": "Maze",     "phrase": "tangled maze of branching passages, dense interconnections, disorienting geometry" },
-        { "id": "Chasm",    "label": "Chasm",    "phrase": "yawning chasm, sheer abyssal drop, narrow precarious crossings, broken railings" }
+        { "id": "Corridor", "label": "Corridor", "tokens": ["narrow linear corridor", "flat floor", "low ceiling", "claustrophobic passage receding into darkness"] },
+        { "id": "Hall",     "label": "Hall",     "tokens": ["regular dwarven hall", "balanced proportions", "columned interior", "structured architecture"] },
+        { "id": "Shaft",    "label": "Shaft",    "tokens": ["vertical shaft", "rusted ladders and chains", "plunging depth", "vertiginous descent"] },
+        { "id": "Cavern",   "label": "Cavern",   "tokens": ["vast irregular cavern", "uneven floor and ceiling", "natural rock formations", "deep shadows in distant recesses"] },
+        { "id": "Maze",     "label": "Maze",     "tokens": ["tangled maze of branching passages", "dense interconnections", "disorienting geometry"] },
+        { "id": "Chasm",    "label": "Chasm",    "tokens": ["yawning chasm", "sheer abyssal drop", "narrow precarious crossings", "broken railings"] }
       ]
     },
     "origin": {
       "label": "Origin",
       "description": "кто построил пространство (env.md §2.3)",
       "values": [
-        { "id": "Natural",            "label": "Natural",             "phrase": "wild natural cave shaped by geological forces, water-eroded rock contours, stalactites and stalagmites, jagged raw stone, untouched primeval geology" },
-        { "id": "DwarvenTech",        "label": "Dwarven Tech",        "phrase": "functional dwarven infrastructure, pipes and gauges, geothermal conduits, sturdy industrial fittings" },
-        { "id": "DwarvenResidential", "label": "Dwarven Residential", "phrase": "dwarven residential architecture, carved doorways, ornamental stonework, low domestic furniture, hearths" },
-        { "id": "HumanAdapted",       "label": "Human-Adapted",       "phrase": "crude human retrofits layered over dwarven stonework, wooden scaffolds, iron bars, makeshift mortar patches" },
-        { "id": "HumanFrontier",      "label": "Human Frontier",      "phrase": "abandoned human frontier outpost, collapsed timber, rusted weapons, tattered banners, signs of hasty retreat" }
+        { "id": "Natural",            "label": "Natural",             "tokens": ["wild natural cave", "shaped by geological forces", "water-eroded rock contours", "stalactites and stalagmites", "jagged raw stone", "untouched primeval geology"] },
+        { "id": "DwarvenTech",        "label": "Dwarven Tech",        "tokens": ["functional dwarven infrastructure", "pipes and gauges", "geothermal conduits", "sturdy industrial fittings"] },
+        { "id": "DwarvenResidential", "label": "Dwarven Residential", "tokens": ["dwarven residential architecture", "carved doorways", "ornamental stonework", "low domestic furniture", "cold hearths"] },
+        { "id": "HumanAdapted",       "label": "Human-Adapted",       "tokens": ["crude human retrofits over dwarven stonework", "wooden scaffolds", "iron bars", "makeshift mortar patches"] },
+        { "id": "HumanFrontier",      "label": "Human Frontier",      "tokens": ["abandoned human frontier outpost", "collapsed timber", "rusted weapons", "tattered banners", "signs of hasty retreat"] }
       ]
     },
     "occupant": {
       "label": "Occupant",
       "description": "кто живёт здесь сейчас (env.md §2.4)",
       "values": [
-        { "id": "None",            "label": "None",             "phrase": "empty of intelligent occupants, undisturbed dust, only ambient ecology" },
-        { "id": "Goblins",         "label": "Goblins",          "phrase": "goblin tribal markings, crude bone fetishes, scattered refuse, primitive barricades and traps" },
-        { "id": "Ratfolk",         "label": "Ratfolk",          "phrase": "ratfolk nests of woven scrap, gnawed wooden beams, layers of filthy detritus, narrow tunnels worn through walls" },
-        { "id": "HumanGarrison",   "label": "Human Garrison",   "phrase": "human garrison post, iron-banded chests, weapon racks, banners of the city guard" },
-        { "id": "HumanExiles",     "label": "Human Exiles",     "phrase": "feral human exile camp, ragged shelters, cannibal trophies, scrawled mad glyphs on the walls" },
-        { "id": "DwarvenRemains",  "label": "Dwarven Remains",  "phrase": "long-dead dwarven bodies, scattered artifacts, abandoned journals, dust-covered tools, signs of an ancient evacuation" },
-        { "id": "DeepHostile",     "label": "Deep Hostile",     "phrase": "alien deep-hostile presence, twisted nests, biological residue, unnatural markings, fragments of monstrous moltings" }
+        { "id": "None",            "label": "None",             "tokens": ["empty of intelligent occupants", "undisturbed dust", "only ambient ecology"] },
+        { "id": "Goblins",         "label": "Goblins",          "tokens": ["goblin tribal markings", "crude bone fetishes", "scattered refuse", "primitive barricades and traps"] },
+        { "id": "Ratfolk",         "label": "Ratfolk",          "tokens": ["ratfolk nests of woven scrap", "gnawed wooden beams", "layers of filthy detritus", "narrow tunnels worn through walls"] },
+        { "id": "HumanGarrison",   "label": "Human Garrison",   "tokens": ["human garrison post", "iron-banded chests", "weapon racks", "banners of the city guard"] },
+        { "id": "HumanExiles",     "label": "Human Exiles",     "tokens": ["feral human exile camp", "ragged shelters", "cannibal trophies", "scrawled mad glyphs on the walls"] },
+        { "id": "DwarvenRemains",  "label": "Dwarven Remains",  "tokens": ["long-dead dwarven bodies", "scattered artifacts", "abandoned journals", "dust-covered tools", "signs of an ancient evacuation"] },
+        { "id": "DeepHostile",     "label": "Deep Hostile",     "tokens": ["alien deep-hostile presence", "twisted nests", "biological residue", "unnatural markings", "fragments of monstrous moltings"] }
       ]
     },
     "camera": {
       "label": "Camera",
       "description": "ракурс и кадрирование сцены — чисто визуальная ось для мудборда, не влияет на лор",
       "values": [
-        { "id": "EstablishingWide", "label": "Establishing Wide", "phrase": "wide establishing shot, expansive view of the whole space, deep receding perspective" },
-        { "id": "EyeLevel",         "label": "Eye Level",         "phrase": "eye-level first-person vantage, standing inside the space, natural human perspective" },
-        { "id": "LowAngleUp",       "label": "Low Angle Up",      "phrase": "low angle looking steeply upward, towering walls rising overhead, oppressive verticality" },
-        { "id": "HighAngleDown",    "label": "High Angle Down",   "phrase": "high angle looking down into the depths, overlook from above, strong sense of the drop below" },
-        { "id": "MaterialCloseup",  "label": "Material Close-up", "phrase": "extreme close-up of the surface, macro detail of texture and material, shallow depth of field" },
-        { "id": "Threshold",        "label": "Threshold",         "phrase": "framed through a doorway in the foreground, threshold composition, dark frame around a lit interior beyond" }
+        { "id": "EstablishingWide", "label": "Establishing Wide", "tokens": ["wide establishing shot", "expansive view of the whole space", "deep receding perspective"] },
+        { "id": "EyeLevel",         "label": "Eye Level",         "tokens": ["eye-level first-person vantage", "standing inside the space", "natural human perspective"] },
+        { "id": "LowAngleUp",       "label": "Low Angle Up",      "tokens": ["low angle looking steeply upward", "towering walls overhead", "oppressive verticality"] },
+        { "id": "HighAngleDown",    "label": "High Angle Down",   "tokens": ["high angle looking down into the depths", "overlook from above", "strong sense of the drop below"] },
+        { "id": "MaterialCloseup",  "label": "Material Close-up", "tokens": ["extreme close-up of the surface", "macro texture detail", "shallow depth of field"] },
+        { "id": "Threshold",        "label": "Threshold",         "tokens": ["framed through a foreground doorway", "threshold composition", "dark frame around a lit interior beyond"] }
       ]
     },
     "condition": {
       "label": "Condition",
       "description": "степень сохранности постройки/пространства (env.md §9 — изношенный/изломанный/повреждённый); ортогональна Origin",
       "values": [
-        { "id": "Pristine",      "label": "Pristine",       "phrase": "pristine intact construction, clean precise surfaces, freshly built, no damage or wear" },
-        { "id": "Worn",          "label": "Worn",           "phrase": "worn and aged, patina of long use, scuffed surfaces, fine cracks and settled dust" },
-        { "id": "Ruined",        "label": "Ruined",         "phrase": "ruined and crumbling, collapsed sections, scattered rubble and debris, structural failure" },
-        { "id": "BattleDamaged", "label": "Battle-Damaged", "phrase": "battle-scarred, scorch marks and impact craters, shattered fixtures, signs of violent fighting" },
-        { "id": "Overgrown",     "label": "Overgrown",      "phrase": "overtaken by encrustation, reclaimed by the underground, creeping mineral and fungal deposits over everything" }
+        { "id": "Pristine",      "label": "Pristine",       "tokens": ["pristine intact construction", "clean precise surfaces", "freshly built", "no damage or wear"] },
+        { "id": "Worn",          "label": "Worn",           "tokens": ["worn and aged", "patina of long use", "scuffed surfaces", "fine cracks and settled dust"] },
+        { "id": "Ruined",        "label": "Ruined",         "tokens": ["ruined and crumbling", "collapsed sections", "scattered rubble and debris", "structural failure"] },
+        { "id": "BattleDamaged", "label": "Battle-Damaged", "tokens": ["battle-scarred", "scorch marks and impact craters", "shattered fixtures", "signs of violent fighting"] },
+        { "id": "Overgrown",     "label": "Overgrown",      "tokens": ["overtaken by encrustation", "reclaimed by the underground", "creeping mineral and fungal deposits"] }
       ]
     },
     "occupancy": {
       "label": "Occupancy",
       "description": "насколько обжито пространство и свежесть следов (ecosystem.md); ортогональна Occupant (кто именно живёт)",
       "values": [
-        { "id": "Abandoned", "label": "Abandoned",  "phrase": "long abandoned, no recent presence, dust settled thick and undisturbed" },
-        { "id": "OldTraces", "label": "Old Traces", "phrase": "old faded traces of past habitation, long-cold hearths, decayed forgotten leavings" },
-        { "id": "Active",    "label": "Active",      "phrase": "signs of active habitation, recently disturbed dust, fresh tracks and leavings" },
-        { "id": "Infested",  "label": "Infested",    "phrase": "densely infested, teeming signs of life, layered nests and trampled paths everywhere" }
+        { "id": "Abandoned", "label": "Abandoned",  "tokens": ["long abandoned", "no recent presence", "dust settled thick and undisturbed"] },
+        { "id": "OldTraces", "label": "Old Traces", "tokens": ["old faded traces of past habitation", "long-cold hearths", "decayed forgotten leavings"] },
+        { "id": "Active",    "label": "Active",      "tokens": ["signs of active habitation", "recently disturbed dust", "fresh tracks and leavings"] },
+        { "id": "Infested",  "label": "Infested",    "tokens": ["densely infested", "teeming signs of life", "layered nests and trampled paths"] }
       ]
     }
   },

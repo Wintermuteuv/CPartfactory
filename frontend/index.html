@@ -463,7 +463,10 @@
     <main>
       <section>
         <div class="card">
-          <h2>Axes</h2>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h2 style="margin:0;">Axes</h2>
+            <button id="btn-random" type="button" style="padding:4px 10px;font-size:10px;" title="случайная валидная комбинация осей">🎲 random</button>
+          </div>
           <div class="field">
             <label>Camera <span class="hint">кадр</span></label>
             <select id="ax-camera"></select>
@@ -889,6 +892,27 @@
         $('btn-generate').disabled = !ok && !force;
       }
 
+      async function randomizeAxes() {
+        try {
+          const res = await fetch('/axes/random', { cache: 'no-store' });
+          const { selection: s } = await res.json();
+          $('ax-material').value  = s.material;
+          $('ax-spaceType').value = s.spaceType;
+          $('ax-origin').value    = s.origin;
+          $('ax-occupant').value  = s.occupant;
+          $('ax-lighting').value  = s.lighting;
+          $('ax-camera').value    = s.camera;
+          $('ax-condition').value = s.condition;
+          $('ax-occupancy').value = s.occupancy;
+          $('ax-depth').value = String(s.depth);
+          $('depth-value').textContent = String(s.depth);
+          markDirty(false); // fresh axes → let the built prompt refresh the textarea
+          await refreshPreview();
+        } catch (err) {
+          showToast('random failed', 'bad');
+        }
+      }
+
       function markDirty(isDirty) {
         state.promptDirty = isDirty;
         $('prompt-dirty').style.display = isDirty ? 'inline' : 'none';
@@ -1241,6 +1265,7 @@
           markDirty(false);
         });
         $('opt-force').addEventListener('change', updateGenerateButton);
+        $('btn-random').addEventListener('click', randomizeAxes);
         $('btn-generate').addEventListener('click', generate);
         $('btn-coverage-refresh').addEventListener('click', refreshCoverage);
         $('btn-coverage-add-toggle').addEventListener('click', () => {

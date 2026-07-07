@@ -199,3 +199,26 @@ test('D: atomized Stone uses tokens and dedups cleanly', () => {
   const descriptors = p.split(',').map((d) => d.trim().toLowerCase());
   assert.equal(descriptors.length, new Set(descriptors).size);
 });
+
+test('D: every discrete axis value is fully migrated to tokens', () => {
+  for (const axisKey of ['lighting', 'material', 'spaceType', 'origin', 'occupant', 'camera', 'condition', 'occupancy']) {
+    for (const v of cfg.raw.axes[axisKey].values) {
+      assert.ok(Array.isArray(v.tokens) && v.tokens.length > 0, `${axisKey}.${v.id} not atomized`);
+      assert.ok(v.phrase == null, `${axisKey}.${v.id} still has a legacy phrase`);
+      for (const t of v.tokens) assert.ok(!t.includes(','), `${axisKey}.${v.id} token not atomic: "${t}"`);
+    }
+  }
+});
+
+test('randomizer: fallback-selection shape is complete and buildable', () => {
+  // simulate what GET /axes/random returns; ensure builder handles it
+  const A = cfg.raw.axes;
+  const first = (k) => A[k].values[0].id;
+  const selection = {
+    material: first('material'), spaceType: first('spaceType'), origin: first('origin'),
+    occupant: first('occupant'), lighting: first('lighting'), camera: first('camera'),
+    condition: first('condition'), occupancy: first('occupancy'), depth: -7,
+  };
+  const opt = optimize(buildPrompt(selection, cfg), selection, cfg);
+  assert.ok(opt.positive.length > 0);
+});

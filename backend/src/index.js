@@ -61,6 +61,31 @@ app.post('/axes/validate', async (req) => {
   return validateCombination(req.body ?? {}, axesConfig);
 });
 
+app.get('/axes/random', async () => {
+  const A = axesConfig.raw.axes;
+  const randomOf = (arr) => arr[Math.floor(Math.random() * arr.length)].id;
+  const pick = () => ({
+    material:  randomOf(A.material.values),
+    spaceType: randomOf(A.spaceType.values),
+    origin:    randomOf(A.origin.values),
+    occupant:  randomOf(A.occupant.values),
+    lighting:  randomOf(A.lighting.values),
+    camera:    randomOf(A.camera.values),
+    condition: randomOf(A.condition.values),
+    occupancy: randomOf(A.occupancy.values),
+    depth:     -(1 + Math.floor(Math.random() * 60)),
+  });
+  // Retry until the combination is lore-valid (rules are depth-dependent, so
+  // most random picks are rejected). Best-effort after the cap.
+  let selection = pick();
+  let validation = validateCombination(selection, axesConfig);
+  for (let i = 0; i < 120 && !validation.ok; i += 1) {
+    selection = pick();
+    validation = validateCombination(selection, axesConfig);
+  }
+  return { selection, valid: validation.ok };
+});
+
 app.post('/prompt/preview', async (req) => {
   const selection = req.body ?? {};
   const validation = validateCombination(selection, axesConfig);
