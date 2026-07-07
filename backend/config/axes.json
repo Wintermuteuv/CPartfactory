@@ -1,0 +1,89 @@
+{
+  "version": "0.2.0",
+  "_source": "Design/fundamentals/environment.md §2 — starter phrases, refine iteratively with Ivan",
+  "_changelog": "0.2.0 (A0): Torches → wall-mounted iron; Chasm walkways сделаны origin-нейтральными; oil lanterns убраны из HumanGarrison (свет — ось lighting); organic-токен убран из max anomaly-модификатора (уходит в будущую ось Biomass)",
+  "baseStyle": {
+    "_lightingRule": "Источник света задаёт ось lighting (по умолчанию Torches). Свет ТОЛЬКО локальный — факелы, бра, дворфьи артефакты, геотермальные жилы (на Reheating). Никаких прорубов в потолке, дневного света, неба, god-rays, ambient-засветки. См. comfyui_api_integration.md §7. lightingDirective идёт первым в промпте — там у SDXL максимальный attention.",
+    "lightingDirective": "deep underground world with no sun and no electricity, warm firelight the only kind of illumination, warm orange-red color temperature, most of the scene drowned in shadow, low-key chiaroscuro lighting, single visible flame as the brightest point, sharp falloff into pitch black",
+    "positive": "dark fantasy underground environment, fully enclosed sealed ceiling, industrial decay, grim oppressive atmosphere, muted limited color palette, highly detailed environment concept art",
+    "negative": "bright, colorful, cartoon, anime, low quality, blurry, watermark, text, signature, oversaturated, cheerful, sunny, modern, hole in ceiling, ceiling opening, opening to surface, broken ceiling, collapsed ceiling, sky, sky light, skylight, daylight, sunlight, sun rays, god rays, light shaft from above, beam of light from ceiling, outdoor lighting, natural daylight, overcast sky, stars, moon, bright ambient light, soft daylight, even illumination, top-down lighting, overhead lighting, fill light from above, high-key lighting, well-lit scene, bright atmosphere, atmospheric daylight haze, glowing fog above, cinematic key light, dramatic rim light from above, cold lighting, blue lighting, cool white light, bluish glow, cyan glow, blue color cast, teal color cast, cold color grading, moonlight, cold ambient glow, fluorescent light, LED light, neon light, electric light, modern lighting, studio lighting, white light, pale white glow, grey ambient light, blue-grey light, silver light, cool highlights, desaturated cold tones, overcast ambient light, skylight ambience, light from unseen source"
+  },
+  "depth": {
+    "min": -60,
+    "max": -1,
+    "label": "Depth",
+    "description": "глубина этажа; driver для AnomalyIntensity и ThermalZone"
+  },
+  "axes": {
+    "lighting": {
+      "label": "Lighting",
+      "description": "источник света в кадре; в мире нет солнца и электричества — только огонь, геотермика и кристаллы",
+      "values": [
+        { "id": "Torches",         "label": "Torches",          "phrase": "wall-mounted iron torches, flickering orange flames, pools of firelight against deep shadow" },
+        { "id": "DwarvenLanterns", "label": "Dwarven Lanterns", "phrase": "dwarven oil lanterns in brass housings, steady warm amber lamplight, pools of golden light" },
+        { "id": "Campfire",        "label": "Campfire",         "phrase": "small campfire on the ground, warm glow cast from below, drifting embers, thin smoke" },
+        { "id": "Geothermal",      "label": "Geothermal",       "phrase": "deep red-orange glow of geothermal vents, molten light seeping through cracks in the rock, heat shimmer" },
+        { "id": "CrystalGlow",     "label": "Crystal Glow",     "phrase": "soft warm amber radiance of luminous crystals, dim mineral glow" },
+        { "id": "NearDark",        "label": "Near Dark",        "phrase": "near-total darkness, one tiny distant flame, barely discernible silhouettes of rock" }
+      ]
+    },
+    "material": {
+      "label": "Material",
+      "description": "природа породы вокруг (env.md §2.1)",
+      "values": [
+        { "id": "Stone",        "label": "Stone",        "phrase": "rough ancient stone, weathered grey rock surfaces, layered rock strata, dim torchlight on bare rock" },
+        { "id": "Ice",          "label": "Ice",          "phrase": "ice-encrusted walls, glistening frost, frozen surfaces reflecting warm torchlight, hanging icicles, frozen mist in the air" },
+        { "id": "DwarvenMetal", "label": "Dwarven Metal","phrase": "dwarven forged metal plating, riveted iron walls, blackened brass fittings, oxidized copper conduits, industrial dwarven craftsmanship" },
+        { "id": "Organic",      "label": "Organic",      "phrase": "wet biological growths, fleshy organic walls, pulsing biomass, dripping membranes, mutated dwarven bio-reactors" },
+        { "id": "Crystal",      "label": "Crystal",      "phrase": "luminous mineral crystals embedded in the walls, faint warm amber inner glow, refractions of firelight, jagged crystal clusters" }
+      ]
+    },
+    "spaceType": {
+      "label": "SpaceType",
+      "description": "функция и геометрия пространства (env.md §2.2)",
+      "values": [
+        { "id": "Corridor", "label": "Corridor", "phrase": "narrow linear corridor, flat floor, low ceiling, claustrophobic passage receding into darkness" },
+        { "id": "Hall",     "label": "Hall",     "phrase": "regular dwarven hall, balanced proportions, columned interior, structured architecture" },
+        { "id": "Shaft",    "label": "Shaft",    "phrase": "vertical shaft, rusted ladders and chains, plunging depth, vertiginous descent" },
+        { "id": "Cavern",   "label": "Cavern",   "phrase": "vast irregular cavern, uneven floor and ceiling, natural rock formations, deep shadows in distant recesses" },
+        { "id": "Maze",     "label": "Maze",     "phrase": "tangled maze of branching passages, dense interconnections, disorienting geometry" },
+        { "id": "Chasm",    "label": "Chasm",    "phrase": "yawning chasm, sheer abyssal drop, narrow precarious crossings, broken railings" }
+      ]
+    },
+    "origin": {
+      "label": "Origin",
+      "description": "кто построил пространство (env.md §2.3)",
+      "values": [
+        { "id": "Natural",            "label": "Natural",             "phrase": "wild natural cave shaped by geological forces, water-eroded rock contours, stalactites and stalagmites, jagged raw stone, untouched primeval geology" },
+        { "id": "DwarvenTech",        "label": "Dwarven Tech",        "phrase": "functional dwarven infrastructure, pipes and gauges, geothermal conduits, sturdy industrial fittings" },
+        { "id": "DwarvenResidential", "label": "Dwarven Residential", "phrase": "dwarven residential architecture, carved doorways, ornamental stonework, low domestic furniture, hearths" },
+        { "id": "HumanAdapted",       "label": "Human-Adapted",       "phrase": "crude human retrofits layered over dwarven stonework, wooden scaffolds, iron bars, makeshift mortar patches" },
+        { "id": "HumanFrontier",      "label": "Human Frontier",      "phrase": "abandoned human frontier outpost, collapsed timber, rusted weapons, tattered banners, signs of hasty retreat" }
+      ]
+    },
+    "occupant": {
+      "label": "Occupant",
+      "description": "кто живёт здесь сейчас (env.md §2.4)",
+      "values": [
+        { "id": "None",            "label": "None",             "phrase": "empty of intelligent occupants, undisturbed dust, only ambient ecology" },
+        { "id": "Goblins",         "label": "Goblins",          "phrase": "goblin tribal markings, crude bone fetishes, scattered refuse, primitive barricades and traps" },
+        { "id": "Ratfolk",         "label": "Ratfolk",          "phrase": "ratfolk nests of woven scrap, gnawed wooden beams, layers of filthy detritus, narrow tunnels worn through walls" },
+        { "id": "HumanGarrison",   "label": "Human Garrison",   "phrase": "human garrison post, iron-banded chests, weapon racks, banners of the city guard" },
+        { "id": "HumanExiles",     "label": "Human Exiles",     "phrase": "feral human exile camp, ragged shelters, cannibal trophies, scrawled mad glyphs on the walls" },
+        { "id": "DwarvenRemains",  "label": "Dwarven Remains",  "phrase": "long-dead dwarven bodies, scattered artifacts, abandoned journals, dust-covered tools, signs of an ancient evacuation" },
+        { "id": "DeepHostile",     "label": "Deep Hostile",     "phrase": "alien deep-hostile presence, twisted nests, biological residue, unnatural markings, fragments of monstrous moltings" }
+      ]
+    }
+  },
+  "anomalyModifiers": [
+    { "max": 0.099, "phrase": "" },
+    { "max": 0.399, "phrase": "subtle perspective shifts, faint reality bleed at the edges of vision" },
+    { "max": 0.699, "phrase": "impossible geometry, warped angles, distorted shadows, unstable flickering light, materials that seem wrong" },
+    { "max": 1.0,   "phrase": "deeply surreal impossible geometry, fractured reality, hallucinatory atmosphere, light bleeding from nowhere" }
+  ],
+  "thermalModifiers": {
+    "Cooling":    { "phrase": "cold air, thin frost on metalwork, breath condensing" },
+    "DeepFreeze": { "phrase": "extreme cold, everything sheathed in ice, brittle frozen surfaces" },
+    "Reheating":  { "phrase": "rising heat, faint glow of distant geothermal vents, heat-warped metal" }
+  }
+}

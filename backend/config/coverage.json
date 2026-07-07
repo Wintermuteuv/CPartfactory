@@ -1,0 +1,386 @@
+{
+  "version": "0.1.0",
+  "_source": "Design/fundamentals/environment.md §3 (dungeon -1) и §9 (depth table)",
+  "_matchSemantics": "Empty/missing axis array = wildcard (matches any). depthRange [shallow, deep] inclusive, both negative.",
+  "items": [
+    {
+      "id": "dungeon-1",
+      "title": "Темница -1 (стартовая)",
+      "source": "env.md §3",
+      "depthRange": [
+        -1,
+        -1
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal"
+        ],
+        "spaceType": [
+          "Corridor",
+          "Hall"
+        ],
+        "origin": [
+          "DwarvenResidential",
+          "HumanAdapted"
+        ],
+        "occupant": [
+          "HumanGarrison",
+          "None"
+        ]
+      },
+      "targetCount": 6
+    },
+    {
+      "id": "city-zone-2-5",
+      "title": "Городская зона -2..-5",
+      "source": "env.md §9",
+      "depthRange": [
+        -2,
+        -5
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal"
+        ],
+        "spaceType": [
+          "Corridor",
+          "Hall"
+        ],
+        "origin": [
+          "DwarvenTech",
+          "DwarvenResidential",
+          "HumanAdapted"
+        ],
+        "occupant": [
+          "HumanGarrison",
+          "None"
+        ]
+      },
+      "targetCount": 6
+    },
+    {
+      "id": "dwarven-tech-6-11",
+      "title": "Гномо-техническая инфраструктура -6..-11",
+      "source": "env.md §9",
+      "depthRange": [
+        -6,
+        -11
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal"
+        ],
+        "spaceType": [
+          "Corridor",
+          "Hall",
+          "Shaft"
+        ],
+        "origin": [
+          "DwarvenTech",
+          "HumanFrontier"
+        ],
+        "occupant": [
+          "Goblins",
+          "Ratfolk",
+          "None"
+        ]
+      },
+      "targetCount": 8
+    },
+    {
+      "id": "transition-12-20",
+      "title": "Переходная зона -12..-20",
+      "source": "env.md §9",
+      "depthRange": [
+        -12,
+        -20
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal",
+          "Crystal"
+        ],
+        "spaceType": [
+          "Cavern",
+          "Hall",
+          "Maze",
+          "Chasm"
+        ],
+        "origin": [
+          "DwarvenTech",
+          "Natural"
+        ],
+        "occupant": [
+          "Ratfolk",
+          "DeepHostile",
+          "HumanExiles",
+          "DwarvenRemains"
+        ]
+      },
+      "targetCount": 8
+    },
+    {
+      "id": "deep-21-31",
+      "title": "Глубокая зона -21..-31 (изношенный tech + natural)",
+      "source": "env.md §9",
+      "depthRange": [
+        -21,
+        -31
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "Crystal"
+        ],
+        "spaceType": [
+          "Cavern",
+          "Maze",
+          "Chasm"
+        ],
+        "origin": [
+          "Natural",
+          "DwarvenTech"
+        ],
+        "occupant": [
+          "DeepHostile",
+          "DwarvenRemains",
+          "None"
+        ]
+      },
+      "targetCount": 6
+    },
+    {
+      "id": "deep-freeze-32-34",
+      "title": "Deep Freeze плато -32..-34",
+      "source": "env.md §8.2",
+      "depthRange": [
+        -32,
+        -34
+      ],
+      "match": {
+        "material": [
+          "Ice",
+          "Stone",
+          "DwarvenMetal"
+        ],
+        "spaceType": [
+          "Cavern",
+          "Hall",
+          "Shaft"
+        ],
+        "origin": [
+          "Natural",
+          "DwarvenTech"
+        ],
+        "occupant": [
+          "DeepHostile",
+          "DwarvenRemains",
+          "None"
+        ]
+      },
+      "targetCount": 4
+    },
+    {
+      "id": "reheating-35-44",
+      "title": "Reheating переход -35..-44",
+      "source": "env.md §8.3, §9",
+      "depthRange": [
+        -35,
+        -44
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal",
+          "Crystal",
+          "Organic"
+        ],
+        "spaceType": [
+          "Cavern",
+          "Hall",
+          "Maze"
+        ],
+        "origin": [
+          "Natural",
+          "DwarvenTech"
+        ],
+        "occupant": [
+          "DeepHostile",
+          "HumanExiles",
+          "DwarvenRemains"
+        ]
+      },
+      "targetCount": 6
+    },
+    {
+      "id": "endgame-peak-45-50",
+      "title": "Endgame Peak -45..-50 (пик опасности)",
+      "source": "env.md §9.1",
+      "depthRange": [
+        -45,
+        -50
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal",
+          "Crystal",
+          "Organic"
+        ],
+        "spaceType": [
+          "Hall",
+          "Cavern",
+          "Chasm"
+        ],
+        "origin": [
+          "DwarvenResidential",
+          "DwarvenTech"
+        ],
+        "occupant": [
+          "DeepHostile",
+          "DwarvenRemains"
+        ]
+      },
+      "targetCount": 8
+    },
+    {
+      "id": "endgame-path-51-55",
+      "title": "Endgame Path -51..-55 (атмосферный путь)",
+      "source": "env.md §9.1",
+      "depthRange": [
+        -51,
+        -55
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal"
+        ],
+        "spaceType": [
+          "Corridor",
+          "Hall"
+        ],
+        "origin": [
+          "DwarvenTech",
+          "DwarvenResidential"
+        ],
+        "occupant": [
+          "DwarvenRemains",
+          "DeepHostile",
+          "None"
+        ]
+      },
+      "targetCount": 4
+    },
+    {
+      "id": "battle-traces-56-57",
+      "title": "Battle Traces -56..-57 (следы битв)",
+      "source": "env.md §9.1",
+      "depthRange": [
+        -56,
+        -57
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal"
+        ],
+        "spaceType": [
+          "Corridor",
+          "Hall",
+          "Cavern"
+        ],
+        "origin": [
+          "DwarvenTech",
+          "DwarvenResidential"
+        ],
+        "occupant": [
+          "DwarvenRemains",
+          "DeepHostile"
+        ]
+      },
+      "targetCount": 4
+    },
+    {
+      "id": "dwarven-halls-58-59",
+      "title": "Dwarven Halls -58..-59 (зеркало темницы)",
+      "source": "env.md §9.1, §9.2",
+      "depthRange": [
+        -58,
+        -59
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal"
+        ],
+        "spaceType": [
+          "Hall",
+          "Corridor"
+        ],
+        "origin": [
+          "DwarvenResidential"
+        ],
+        "occupant": [
+          "DwarvenRemains",
+          "None"
+        ]
+      },
+      "targetCount": 6
+    },
+    {
+      "id": "final-floor-60",
+      "title": "Final Floor -60 (огромный финальный холл)",
+      "source": "env.md §9.1",
+      "depthRange": [
+        -60,
+        -60
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal"
+        ],
+        "spaceType": [
+          "Hall"
+        ],
+        "origin": [
+          "DwarvenResidential"
+        ],
+        "occupant": [
+          "None"
+        ]
+      },
+      "targetCount": 3
+    },
+    {
+      "id": "test-shaft-vertical",
+      "title": "Тестовая вертикальная шахта (-3..-8)",
+      "source": "manual UI test",
+      "depthRange": [
+        -3,
+        -8
+      ],
+      "match": {
+        "material": [
+          "Stone",
+          "DwarvenMetal"
+        ],
+        "spaceType": [
+          "Shaft"
+        ],
+        "origin": [
+          "DwarvenTech"
+        ],
+        "occupant": [
+          "None"
+        ]
+      },
+      "targetCount": 3
+    }
+  ]
+}

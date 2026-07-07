@@ -1,0 +1,19 @@
+{
+  "name": "art-factory-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cursed Pit Art Factory — local Node backend wrapping ComfyUI",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@fastify/static": "^7.0.4",
+    "fastify": "^4.28.1",
+    "pino-pretty": "^11.3.0"
+  }
+}

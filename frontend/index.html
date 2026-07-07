@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cursed Pit · Art Factory</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #14110f;
+        --panel: #1e1a17;
+        --panel-2: #251f1a;
+        --border: #2d2722;
+        --border-strong: #3d3530;
+        --text: #d8cfc4;
+        --muted: #807468;
+        --accent: #c2956a;
+        --ok: #6fae5e;
+        --warn: #c98a3a;
+        --bad: #b14a3a;
+        font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 24px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(180deg, #1a1613, #14110f);
+      }
+      header .title {
+        font-size: 15px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      header .health { font-size: 11px; color: var(--muted); }
+      header .health .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-left: 6px;
+      }
+      .pill.ok   { background: rgba(111, 174, 94, 0.15); color: var(--ok); border: 1px solid var(--ok); }
+      .pill.bad  { background: rgba(177, 74, 58, 0.15); color: var(--bad); border: 1px solid var(--bad); }
+      .pill.warn { background: rgba(201, 138, 58, 0.15); color: var(--warn); border: 1px solid var(--warn); }
+
+      main {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 16px;
+        padding: 16px;
+        max-width: 1500px;
+        margin: 0 auto;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 14px 16px;
+      }
+      .card + .card { margin-top: 12px; }
+      .card h2 {
+        margin: 0 0 10px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .field { display: block; margin-bottom: 10px; }
+      .field:last-child { margin-bottom: 0; }
+      .field label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .field label .hint { color: var(--accent); text-transform: none; letter-spacing: 0; font-size: 11px; }
+      select, input[type="number"], input[type="text"], textarea {
+        width: 100%;
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border-strong);
+        border-radius: 4px;
+        padding: 6px 8px;
+        font: inherit;
+        font-size: 12px;
+      }
+      select:focus, input:focus, textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      textarea {
+        resize: vertical;
+        min-height: 110px;
+        line-height: 1.5;
+        font-family: 'JetBrains Mono', Consolas, monospace;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: var(--accent);
+      }
+      .row { display: flex; gap: 8px; }
+      .row > * { flex: 1; }
+
+      .derived {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+        padding: 8px 10px;
+        background: var(--panel-2);
+        border: 1px dashed var(--border-strong);
+        border-radius: 4px;
+        font-size: 11px;
+      }
+      .derived .label { color: var(--muted); margin-right: 4px; }
+      .anomaly-bar {
+        flex: 1;
+        height: 6px;
+        background: var(--border);
+        border-radius: 999px;
+        position: relative;
+        overflow: hidden;
+      }
+      .anomaly-bar > span {
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        background: linear-gradient(90deg, var(--ok), var(--warn), var(--bad));
+        transition: width 0.2s ease;
+      }
+
+      .validation { font-size: 12px; }
+      .validation .v-line { padding: 6px 8px; border-radius: 4px; margin-top: 4px; }
+      .validation .v-line.err  { background: rgba(177, 74, 58, 0.12); border-left: 3px solid var(--bad); color: #e7b6ad; }
+      .validation .v-line.warn { background: rgba(201, 138, 58, 0.12); border-left: 3px solid var(--warn); color: #e7c89a; }
+
+      .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      button {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border-strong);
+        padding: 8px 14px;
+        border-radius: 4px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+      button:disabled { opacity: 0.4; cursor: not-allowed; }
+      button.primary {
+        background: var(--accent);
+        color: #14110f;
+        border-color: var(--accent);
+      }
+      button.primary:hover:not(:disabled) { color: #14110f; background: #d4a47b; }
+
+      .prompt-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .prompt-meta .dirty { color: var(--warn); }
+
+      .result-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 12px;
+      }
+      .result-image {
+        background: var(--panel-2);
+        border: 1px dashed var(--border-strong);
+        border-radius: 4px;
+        min-height: 320px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .result-image {
+        position: relative;
+      }
+      .result-image img {
+        max-width: 100%;
+        max-height: 80vh;
+        display: block;
+        cursor: copy;
+        transition: opacity 0.15s ease;
+      }
+      .result-image img:hover { opacity: 0.9; }
+      .expand-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: rgba(20, 17, 15, 0.85);
+        border: 1px solid var(--border-strong);
+        color: var(--text);
+        padding: 4px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        border-radius: 3px;
+      }
+      .expand-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 32px;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--border-strong);
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        pointer-events: none;
+        z-index: 1100;
+      }
+      .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      .toast.ok  { border-color: var(--ok); }
+      .toast.bad { border-color: var(--bad); color: #e7b6ad; }
+
+      .progress { margin-top: 12px; }
+      .progress-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        margin-bottom: 4px;
+        color: var(--text);
+      }
+      .progress-bar {
+        height: 6px;
+        background: var(--border);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .progress-bar > span {
+        display: block;
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent), var(--ok));
+        transition: width 0.2s ease;
+      }
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 8, 6, 0.96);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        cursor: zoom-out;
+      }
+      .lightbox.open { display: flex; }
+      .lightbox img {
+        max-width: 96vw;
+        max-height: 96vh;
+        display: block;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+        cursor: copy;
+      }
+      .lightbox-close {
+        position: absolute;
+        top: 16px;
+        right: 20px;
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border-strong);
+        font-size: 16px;
+        line-height: 1;
+        padding: 6px 12px;
+        cursor: pointer;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      .lightbox-close:hover { border-color: var(--accent); color: var(--accent); }
+
+      .preset-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .preset-row button {
+        padding: 4px 8px;
+        font-size: 10px;
+        text-transform: none;
+        letter-spacing: 0;
+        flex: 1 1 auto;
+      }
+      .preset-row button.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(194, 149, 106, 0.08);
+      }
+      .lightbox-caption {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: var(--muted);
+        font-size: 11px;
+        background: rgba(20, 17, 15, 0.8);
+        padding: 6px 12px;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+      }
+      .result-image .placeholder { color: var(--muted); padding: 32px; text-align: center; }
+      .result-info {
+        background: var(--panel-2);
+        border: 1px solid var(--border-strong);
+        border-radius: 4px;
+        padding: 10px 12px;
+        font-size: 11px;
+        line-height: 1.6;
+      }
+      .result-info dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; column-gap: 10px; row-gap: 4px; }
+      .result-info dt { color: var(--muted); }
+      .result-info dd { margin: 0; word-break: break-all; }
+
+      .spinner {
+        display: inline-block;
+        width: 12px; height: 12px;
+        border: 2px solid var(--border-strong);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        vertical-align: middle;
+        margin-right: 6px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      details { margin-top: 8px; }
+      details summary { cursor: pointer; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+      details summary:hover { color: var(--accent); }
+
+      .coverage-wrap {
+        padding: 0 16px 24px;
+        max-width: 1500px;
+        margin: 0 auto;
+      }
+      table.coverage {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      table.coverage th, table.coverage td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+      }
+      table.coverage th {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      table.coverage tbody tr:hover { background: rgba(194, 149, 106, 0.06); }
+      table.coverage .status-dot {
+        display: inline-block;
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        border: 1px solid var(--border-strong);
+        background: var(--bg);
+      }
+      .status-dot.partial { background: var(--warn); border-color: var(--warn); }
+      .status-dot.done    { background: var(--ok);   border-color: var(--ok); }
+      .count-cell { font-variant-numeric: tabular-nums; }
+      .count-cell .num { color: var(--text); }
+      .count-cell .sep { color: var(--muted); }
+      .count-cell .target { color: var(--muted); }
+      .count-cell.met .num { color: var(--ok); }
+      .actions-cell { white-space: nowrap; }
+      .actions-cell button {
+        padding: 4px 8px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-left: 4px;
+      }
+      .actions-cell button.danger:hover { color: var(--bad); border-color: var(--bad); }
+
+      .add-form {
+        margin-top: 12px;
+        padding: 12px;
+        background: var(--panel-2);
+        border: 1px dashed var(--border-strong);
+        border-radius: 4px;
+      }
+      .add-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 12px;
+        font-size: 11px;
+        color: var(--text);
+        padding: 6px 8px;
+        background: var(--panel);
+        border: 1px solid var(--border-strong);
+        border-radius: 4px;
+        max-height: 90px;
+        overflow-y: auto;
+      }
+      .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--text);
+        cursor: pointer;
+      }
+      .depth-pair {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .depth-pair input {
+        width: 60px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="title">Cursed Pit · Art Factory</div>
+      <div class="health">
+        <span id="health-text">checking…</span>
+        <span id="health-pill" class="pill warn">…</span>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="card">
+          <h2>Axes</h2>
+          <div class="field">
+            <label>Material</label>
+            <select id="ax-material"></select>
+          </div>
+          <div class="field">
+            <label>Space type</label>
+            <select id="ax-spaceType"></select>
+          </div>
+          <div class="field">
+            <label>Origin</label>
+            <select id="ax-origin"></select>
+          </div>
+          <div class="field">
+            <label>Occupant</label>
+            <select id="ax-occupant"></select>
+          </div>
+          <div class="field">
+            <label>Lighting</label>
+            <select id="ax-lighting"></select>
+          </div>
+          <div class="field">
+            <label>Depth <span class="hint" id="depth-value">-1</span></label>
+            <input type="range" id="ax-depth" min="-60" max="-1" step="1" value="-3" />
+          </div>
+          <div class="derived">
+            <span><span class="label">Zone:</span><span id="d-zone">—</span></span>
+            <span><span class="label">Anomaly:</span><span id="d-anom">—</span></span>
+            <div class="anomaly-bar"><span id="d-anom-bar"></span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Validation</h2>
+          <div class="validation" id="validation">
+            <span class="pill warn">awaiting axes</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Params</h2>
+          <div class="row">
+            <div class="field">
+              <label>Seed <span class="hint">empty = random</span></label>
+              <input type="number" id="p-seed" placeholder="random" />
+            </div>
+            <div class="field">
+              <label>Steps</label>
+              <input type="number" id="p-steps" value="28" min="1" max="60" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>CFG <span class="hint">6–8 для SDXL</span></label>
+              <input type="number" id="p-cfg" value="6.5" min="1" max="15" step="0.1" />
+            </div>
+            <div class="field">
+              <label>Sampler</label>
+              <select id="p-sampler">
+                <option value="dpmpp_2m">dpmpp_2m</option>
+                <option value="dpmpp_2m_sde">dpmpp_2m_sde</option>
+                <option value="dpmpp_3m_sde">dpmpp_3m_sde</option>
+                <option value="dpmpp_sde">dpmpp_sde</option>
+                <option value="euler">euler</option>
+                <option value="euler_ancestral">euler_ancestral</option>
+                <option value="uni_pc">uni_pc</option>
+                <option value="ddim">ddim</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Scheduler</label>
+              <select id="p-scheduler">
+                <option value="karras">karras</option>
+                <option value="normal">normal</option>
+                <option value="exponential">exponential</option>
+                <option value="simple">simple</option>
+                <option value="sgm_uniform">sgm_uniform</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Preset <span class="hint">SDXL native ratios</span></label>
+              <div class="preset-row" id="res-presets">
+                <button type="button" data-w="1024" data-h="1024" title="square">1024²</button>
+                <button type="button" data-w="1216" data-h="832"  title="landscape, wide shots">1216×832</button>
+                <button type="button" data-w="832"  data-h="1216" title="portrait, shafts">832×1216</button>
+                <button type="button" data-w="1152" data-h="896"  title="loose landscape">1152×896</button>
+                <button type="button" data-w="896"  data-h="1152" title="loose portrait">896×1152</button>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Width</label>
+              <input type="number" id="p-width" value="1024" min="256" max="1536" step="64" />
+            </div>
+            <div class="field">
+              <label>Height</label>
+              <input type="number" id="p-height" value="1024" min="256" max="1536" step="64" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="card">
+          <div class="prompt-meta">
+            <span>Positive prompt <span id="prompt-dirty" class="dirty" style="display:none;">(edited)</span></span>
+            <button id="btn-rebuild" type="button" title="Rebuild from axes, discard manual edits">rebuild from axes</button>
+          </div>
+          <textarea id="prompt-positive" spellcheck="false" placeholder="select axes to build a prompt…"></textarea>
+          <details>
+            <summary>negative prompt</summary>
+            <textarea id="prompt-negative" spellcheck="false" style="min-height:60px;margin-top:6px;"></textarea>
+          </details>
+
+          <div class="actions" style="margin-top: 14px;">
+            <button class="primary" id="btn-generate">generate</button>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0;">
+              <input type="checkbox" id="opt-force" />
+              force (bypass validation)
+            </label>
+            <span id="gen-status" style="margin-left:auto;font-size:11px;color:var(--muted);"></span>
+          </div>
+          <div class="progress" id="progress" style="display:none;">
+            <div class="progress-meta">
+              <span id="progress-label">step 0 / 0</span>
+              <span id="progress-node" style="color:var(--muted);"></span>
+            </div>
+            <div class="progress-bar"><span id="progress-fill"></span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Result</h2>
+          <div class="result-grid">
+            <div class="result-image" id="result-image">
+              <div class="placeholder">no image yet — press generate</div>
+            </div>
+            <div class="result-info" id="result-info">
+              <dl id="result-meta"></dl>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="lightbox" class="lightbox" aria-hidden="true">
+      <button class="lightbox-close" id="lightbox-close" type="button" aria-label="Close">close (esc)</button>
+      <img id="lightbox-img" alt="" title="click to copy to clipboard" />
+      <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <section class="coverage-wrap">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h2 style="margin:0;">Coverage</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span id="coverage-summary" style="font-size:11px;color:var(--muted);">…</span>
+            <button id="btn-coverage-refresh" type="button">refresh</button>
+            <button id="btn-coverage-add-toggle" type="button">+ add item</button>
+          </div>
+        </div>
+        <table class="coverage">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Title</th>
+              <th>Depth</th>
+              <th>Generated</th>
+              <th>External</th>
+              <th>Source</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="coverage-rows"></tbody>
+        </table>
+
+        <div id="coverage-add" class="add-form" style="display:none;">
+          <div class="add-form-grid">
+            <div class="field">
+              <label>ID <span class="hint">unique, kebab-case</span></label>
+              <input type="text" id="ci-id" placeholder="dungeon-1" />
+            </div>
+            <div class="field">
+              <label>Title</label>
+              <input type="text" id="ci-title" placeholder="Темница -1 (стартовая)" />
+            </div>
+            <div class="field">
+              <label>Source <span class="hint">e.g. env.md §X</span></label>
+              <input type="text" id="ci-source" placeholder="env.md §3" />
+            </div>
+            <div class="field">
+              <label>Target count</label>
+              <input type="number" id="ci-target" value="4" min="1" />
+            </div>
+            <div class="field" style="grid-column: span 2;">
+              <label>Depth range</label>
+              <div class="depth-pair">
+                <span style="color:var(--muted);font-size:11px;">from</span>
+                <input type="number" id="ci-depth-shallow" value="-1" min="-60" max="-1" />
+                <span style="color:var(--muted);font-size:11px;">to</span>
+                <input type="number" id="ci-depth-deep" value="-5" min="-60" max="-1" />
+                <span style="color:var(--muted);font-size:11px;">(shallow → deep)</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>Material <span class="hint">empty = any</span></label>
+              <div class="checkbox-group" id="ci-material"></div>
+            </div>
+            <div class="field">
+              <label>Space type</label>
+              <div class="checkbox-group" id="ci-spaceType"></div>
+            </div>
+            <div class="field">
+              <label>Origin</label>
+              <div class="checkbox-group" id="ci-origin"></div>
+            </div>
+            <div class="field">
+              <label>Occupant</label>
+              <div class="checkbox-group" id="ci-occupant"></div>
+            </div>
+            <div class="field">
+              <label>Lighting</label>
+              <div class="checkbox-group" id="ci-lighting"></div>
+            </div>
+          </div>
+          <div class="actions" style="margin-top:10px;">
+            <button class="primary" id="btn-coverage-save" type="button">save</button>
+            <button id="btn-coverage-cancel" type="button">cancel</button>
+            <span id="coverage-form-status" style="font-size:11px;color:var(--muted);"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+      const state = {
+        axesConfig: null,
+        currentValidation: null,
+        currentBuiltPositive: '',
+        promptDirty: false,
+      };
+
+      function selectedAxes() {
+        return {
+          material:  $('ax-material').value,
+          spaceType: $('ax-spaceType').value,
+          origin:    $('ax-origin').value,
+          occupant:  $('ax-occupant').value,
+          lighting:  $('ax-lighting').value,
+          depth:     Number($('ax-depth').value),
+        };
+      }
+
+      function populateSelect(el, values, defaultId) {
+        el.innerHTML = '';
+        for (const v of values) {
+          const opt = document.createElement('option');
+          opt.value = v.id;
+          opt.textContent = v.label ?? v.id;
+          el.appendChild(opt);
+        }
+        if (defaultId) el.value = defaultId;
+      }
+
+      async function loadAxes() {
+        const res = await fetch('/axes');
+        if (!res.ok) throw new Error('GET /axes failed');
+        const data = await res.json();
+        state.axesConfig = data;
+
+        populateSelect($('ax-material'),  data.axes.material.values,  'Stone');
+        populateSelect($('ax-spaceType'), data.axes.spaceType.values, 'Corridor');
+        populateSelect($('ax-origin'),    data.axes.origin.values,    'DwarvenTech');
+        populateSelect($('ax-occupant'),  data.axes.occupant.values,  'None');
+        populateSelect($('ax-lighting'),  data.axes.lighting.values,  'Torches');
+        $('ax-depth').min = data.depth.min;
+        $('ax-depth').max = data.depth.max;
+        $('ax-depth').value = -3;
+        $('depth-value').textContent = '-3';
+
+        $('prompt-negative').value = data.baseStyle.negative;
+      }
+
+      function renderDerived(derived) {
+        if (!derived) {
+          $('d-zone').textContent = '—';
+          $('d-anom').textContent = '—';
+          $('d-anom-bar').style.width = '0%';
+          return;
+        }
+        $('d-zone').textContent = derived.thermalZone ?? '—';
+        const a = derived.anomalyIntensity;
+        $('d-anom').textContent = a == null ? '—' : a.toFixed(2);
+        $('d-anom-bar').style.width = ((a ?? 0) * 100).toFixed(1) + '%';
+      }
+
+      function renderValidation(validation) {
+        const el = $('validation');
+        if (!validation) {
+          el.innerHTML = '<span class="pill warn">…</span>';
+          return;
+        }
+        const parts = [];
+        if (validation.ok && validation.warnings.length === 0) {
+          parts.push('<span class="pill ok">valid</span>');
+        } else if (validation.ok) {
+          parts.push('<span class="pill warn">valid with warnings</span>');
+        } else {
+          parts.push('<span class="pill bad">invalid</span>');
+        }
+        for (const e of validation.errors ?? []) {
+          parts.push(`<div class="v-line err"><b>${e.rule}:</b> ${escapeHtml(e.message)}</div>`);
+        }
+        for (const w of validation.warnings ?? []) {
+          parts.push(`<div class="v-line warn"><b>${w.rule}:</b> ${escapeHtml(w.message)}</div>`);
+        }
+        el.innerHTML = parts.join('');
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      async function refreshPreview() {
+        const axes = selectedAxes();
+        const res = await fetch('/prompt/preview', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(axes),
+        });
+        const data = await res.json();
+        state.currentValidation = data.validation;
+        renderValidation(data.validation);
+        renderDerived(data.validation?.derived ?? null);
+
+        if (data.prompt) {
+          state.currentBuiltPositive = data.prompt.positive;
+          if (!state.promptDirty) {
+            $('prompt-positive').value = data.prompt.positive;
+          }
+          $('prompt-negative').placeholder = data.prompt.negative;
+        }
+        updateGenerateButton();
+      }
+
+      function updateGenerateButton() {
+        const force = $('opt-force').checked;
+        const ok = state.currentValidation?.ok;
+        $('btn-generate').disabled = !ok && !force;
+      }
+
+      function markDirty(isDirty) {
+        state.promptDirty = isDirty;
+        $('prompt-dirty').style.display = isDirty ? 'inline' : 'none';
+      }
+
+      function statusClass(generated, target) {
+        if (generated === 0) return '';
+        if (generated >= target) return 'done';
+        return 'partial';
+      }
+
+      function formatDepth(range) {
+        if (!Array.isArray(range) || range.length !== 2) return '—';
+        return range[0] === range[1] ? String(range[0]) : `${range[0]}..${range[1]}`;
+      }
+
+      function pickFromArray(arr, defaults) {
+        if (Array.isArray(arr) && arr.length > 0) return arr[0];
+        return defaults[0]?.id;
+      }
+
+      function applyItemToAxes(item) {
+        const cfg = state.axesConfig;
+        if (!cfg) return;
+        const set = (id, val) => {
+          const el = document.getElementById(id);
+          if (el && val) { el.value = val; el.dispatchEvent(new Event('change', { bubbles: true })); }
+        };
+        set('ax-material',  pickFromArray(item.match?.material,  cfg.axes.material.values));
+        set('ax-spaceType', pickFromArray(item.match?.spaceType, cfg.axes.spaceType.values));
+        set('ax-origin',    pickFromArray(item.match?.origin,    cfg.axes.origin.values));
+        set('ax-occupant',  pickFromArray(item.match?.occupant,  cfg.axes.occupant.values));
+        set('ax-lighting',  pickFromArray(item.match?.lighting,  cfg.axes.lighting.values));
+        const [shallow, deep] = item.depthRange;
+        const mid = Math.round((shallow + deep) / 2);
+        const slider = document.getElementById('ax-depth');
+        slider.value = String(mid);
+        document.getElementById('depth-value').textContent = String(mid);
+        slider.dispatchEvent(new Event('input', { bubbles: true }));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      async function deleteItem(id) {
+        if (!confirm(`Delete coverage item "${id}"?`)) return;
+        const res = await fetch(`/coverage/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (res.ok) await refreshCoverage();
+      }
+
+      function renderCoverage(data) {
+        const rows = $('coverage-rows');
+        const items = data.items ?? [];
+        let totalGen = 0, totalTarget = 0, totalExt = 0;
+        rows.innerHTML = items.map((item) => {
+          totalGen += item.generated;
+          totalTarget += item.targetCount;
+          totalExt += item.external;
+          const cls = statusClass(item.generated, item.targetCount);
+          const met = item.generated >= item.targetCount ? 'met' : '';
+          return `
+            <tr data-id="${escapeHtml(item.id)}">
+              <td><span class="status-dot ${cls}" title="${item.generated >= item.targetCount ? 'target met' : item.generated > 0 ? 'in progress' : 'empty'}"></span></td>
+              <td>${escapeHtml(item.title)}</td>
+              <td>${escapeHtml(formatDepth(item.depthRange))}</td>
+              <td class="count-cell ${met}"><span class="num">${item.generated}</span><span class="sep"> / </span><span class="target">${item.targetCount}</span></td>
+              <td class="count-cell">${item.external}</td>
+              <td style="color:var(--muted);">${escapeHtml(item.source ?? '')}</td>
+              <td class="actions-cell">
+                <button data-action="apply" data-id="${escapeHtml(item.id)}" title="Apply this item's axes to the generator">apply</button>
+                <button class="danger" data-action="delete" data-id="${escapeHtml(item.id)}" title="Delete this item">×</button>
+              </td>
+            </tr>`;
+        }).join('');
+        $('coverage-summary').textContent = `${totalGen}/${totalTarget} arts · ${totalExt} external · ${items.length} items`;
+
+        rows.querySelectorAll('button[data-action]').forEach((btn) => {
+          const id = btn.dataset.id;
+          const action = btn.dataset.action;
+          btn.addEventListener('click', () => {
+            const item = items.find((i) => i.id === id);
+            if (!item) return;
+            if (action === 'apply') applyItemToAxes(item);
+            if (action === 'delete') deleteItem(id);
+          });
+        });
+      }
+
+      async function refreshCoverage() {
+        try {
+          const res = await fetch('/coverage', { cache: 'no-store' });
+          const data = await res.json();
+          renderCoverage(data);
+        } catch (err) {
+          $('coverage-summary').textContent = 'load failed';
+        }
+      }
+
+      function buildCheckboxGroup(containerId, axisValues) {
+        const el = document.getElementById(containerId);
+        el.innerHTML = axisValues.map((v) =>
+          `<label><input type="checkbox" value="${escapeHtml(v.id)}" />${escapeHtml(v.label ?? v.id)}</label>`
+        ).join('');
+      }
+
+      function collectChecked(containerId) {
+        return [...document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`)].map((c) => c.value);
+      }
+
+      function initCoverageAddForm() {
+        const cfg = state.axesConfig;
+        if (!cfg) return;
+        buildCheckboxGroup('ci-material',  cfg.axes.material.values);
+        buildCheckboxGroup('ci-spaceType', cfg.axes.spaceType.values);
+        buildCheckboxGroup('ci-origin',    cfg.axes.origin.values);
+        buildCheckboxGroup('ci-occupant',  cfg.axes.occupant.values);
+        buildCheckboxGroup('ci-lighting',  cfg.axes.lighting.values);
+      }
+
+      async function saveCoverageItem() {
+        const status = $('coverage-form-status');
+        status.textContent = '';
+        const body = {
+          id:     $('ci-id').value.trim(),
+          title:  $('ci-title').value.trim(),
+          source: $('ci-source').value.trim() || null,
+          targetCount: Number($('ci-target').value),
+          depthRange: [Number($('ci-depth-shallow').value), Number($('ci-depth-deep').value)],
+          match: {
+            material:  collectChecked('ci-material'),
+            spaceType: collectChecked('ci-spaceType'),
+            origin:    collectChecked('ci-origin'),
+            occupant:  collectChecked('ci-occupant'),
+            lighting:  collectChecked('ci-lighting'),
+          },
+        };
+        const res = await fetch('/coverage', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          status.innerHTML = `<span style="color:var(--bad)">${escapeHtml(data.error ?? 'failed')}</span>`;
+          return;
+        }
+        status.innerHTML = `<span style="color:var(--ok)">added ${escapeHtml(data.id)}</span>`;
+        $('coverage-add').style.display = 'none';
+        await refreshCoverage();
+      }
+
+      async function refreshHealth() {
+        try {
+          const res = await fetch('/healthz', { cache: 'no-store' });
+          const data = await res.json();
+          $('health-text').textContent = `ComfyUI ${data.comfyui?.version ?? '?'} · ${data.comfyui?.latencyMs ?? '?'}ms`;
+          const pill = $('health-pill');
+          pill.className = 'pill ' + (data.status === 'ready' ? 'ok' : 'bad');
+          pill.textContent = data.status;
+        } catch {
+          $('health-text').textContent = 'backend down';
+          $('health-pill').className = 'pill bad';
+          $('health-pill').textContent = 'down';
+        }
+      }
+
+      function openLightbox(src, caption) {
+        const box = $('lightbox');
+        $('lightbox-img').src = src;
+        $('lightbox-img').alt = caption ?? '';
+        $('lightbox-img').dataset.copySrc = src;
+        $('lightbox-caption').textContent = caption ?? '';
+        box.classList.add('open');
+        box.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeLightbox() {
+        const box = $('lightbox');
+        box.classList.remove('open');
+        box.setAttribute('aria-hidden', 'true');
+        $('lightbox-img').src = '';
+      }
+
+      let toastTimer = null;
+      function showToast(message, variant = 'ok', durationMs = 1600) {
+        const el = $('toast');
+        el.textContent = message;
+        el.className = `toast show ${variant}`;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { el.className = `toast ${variant}`; }, durationMs);
+      }
+
+      async function copyImageToClipboard(src) {
+        if (!navigator.clipboard || !window.ClipboardItem) {
+          showToast('clipboard API unavailable', 'bad');
+          return;
+        }
+        try {
+          const res = await fetch(src, { cache: 'no-store' });
+          if (!res.ok) throw new Error(`fetch HTTP ${res.status}`);
+          const blob = await res.blob();
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/png']: blob })]);
+          showToast('copied to clipboard', 'ok');
+        } catch (err) {
+          console.error(err);
+          showToast(`copy failed: ${err.message}`, 'bad', 2400);
+        }
+      }
+
+      function renderResult(result) {
+        if (!result) {
+          $('result-image').innerHTML = '<div class="placeholder">no image yet — press generate</div>';
+          $('result-meta').innerHTML = '';
+          return;
+        }
+        const first = result.images?.[0];
+        if (first) {
+          const url = `${first.url}?t=${Date.now()}`;
+          $('result-image').innerHTML = `
+            <img src="${url}" alt="${escapeHtml(first.filename)}" title="click to copy to clipboard" />
+            <button class="expand-btn" id="expand-result" type="button" title="open fullscreen">⤢ fullscreen</button>
+          `;
+          const imgEl = $('result-image').querySelector('img');
+          imgEl.addEventListener('click', () => copyImageToClipboard(url));
+          $('expand-result').addEventListener('click', () => openLightbox(url, first.filename));
+        }
+        const derived = result.validation?.derived ?? {};
+        const rows = [
+          ['Seed', result.seed],
+          ['Duration', `${(result.durationMs / 1000).toFixed(1)} s`],
+          ['Prompt ID', result.promptId],
+          ['File', first?.filename ?? '—'],
+          ['Thermal zone', derived.thermalZone ?? '—'],
+          ['Anomaly', derived.anomalyIntensity != null ? derived.anomalyIntensity.toFixed(2) : '—'],
+        ];
+        $('result-meta').innerHTML = rows
+          .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`)
+          .join('');
+      }
+
+      let progressPollTimer = null;
+
+      function showProgressBar() {
+        $('progress').style.display = '';
+        $('progress-label').textContent = 'queued…';
+        $('progress-node').textContent = '';
+        $('progress-fill').style.width = '0%';
+      }
+      function hideProgressBar() {
+        $('progress').style.display = 'none';
+        $('progress-fill').style.width = '0%';
+        clearInterval(progressPollTimer);
+        progressPollTimer = null;
+      }
+      async function pollProgressOnce() {
+        try {
+          const res = await fetch('/progress/active', { cache: 'no-store' });
+          const p = await res.json();
+          if (p?.status === 'running' || p?.status === 'started') {
+            const max = Number(p.max ?? 0);
+            const val = Number(p.value ?? 0);
+            const pct = max > 0 ? Math.min(100, (val / max) * 100) : 0;
+            $('progress-fill').style.width = pct.toFixed(1) + '%';
+            $('progress-label').textContent = max > 0 ? `step ${val} / ${max}` : 'starting…';
+            $('progress-node').textContent = p.node ? `node ${p.node}` : '';
+          } else if (p?.status === 'error') {
+            $('progress-label').textContent = `error: ${p.error ?? 'unknown'}`;
+          }
+        } catch {}
+      }
+
+      async function generate() {
+        const status = $('gen-status');
+        const btn = $('btn-generate');
+        btn.disabled = true;
+        status.innerHTML = '<span class="spinner"></span>generating…';
+        showProgressBar();
+        clearInterval(progressPollTimer);
+        progressPollTimer = setInterval(pollProgressOnce, 500);
+        pollProgressOnce();
+
+        const axes = selectedAxes();
+        const seedRaw = $('p-seed').value.trim();
+        const body = {
+          axes,
+          steps: Number($('p-steps').value),
+          width: Number($('p-width').value),
+          height: Number($('p-height').value),
+          force: $('opt-force').checked,
+        };
+        if (seedRaw) body.seed = Number(seedRaw);
+        body.cfg = Number($('p-cfg').value);
+        body.sampler = $('p-sampler').value;
+        body.scheduler = $('p-scheduler').value;
+        if (state.promptDirty) {
+          body.positive = $('prompt-positive').value;
+        }
+        const negativeManual = $('prompt-negative').value.trim();
+        if (negativeManual) body.negative = negativeManual;
+
+        const startedAt = Date.now();
+        try {
+          const res = await fetch('/generate', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            status.innerHTML = `<span style="color:var(--bad)">error: ${escapeHtml(data.error ?? 'unknown')}</span>`;
+            return;
+          }
+          const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+          status.innerHTML = `<span style="color:var(--ok)">done in ${elapsed}s</span>`;
+          renderResult(data);
+          refreshCoverage();
+        } catch (err) {
+          status.innerHTML = `<span style="color:var(--bad)">${escapeHtml(err.message)}</span>`;
+        } finally {
+          hideProgressBar();
+          updateGenerateButton();
+        }
+      }
+
+      const debouncedPreview = debounce(refreshPreview, 200);
+
+      function wireEvents() {
+        for (const id of ['ax-material', 'ax-spaceType', 'ax-origin', 'ax-occupant', 'ax-lighting']) {
+          $(id).addEventListener('change', () => debouncedPreview());
+        }
+        $('ax-depth').addEventListener('input', () => {
+          $('depth-value').textContent = $('ax-depth').value;
+          debouncedPreview();
+        });
+        $('prompt-positive').addEventListener('input', () => {
+          markDirty($('prompt-positive').value !== state.currentBuiltPositive);
+        });
+        $('btn-rebuild').addEventListener('click', () => {
+          $('prompt-positive').value = state.currentBuiltPositive;
+          markDirty(false);
+        });
+        $('opt-force').addEventListener('change', updateGenerateButton);
+        $('btn-generate').addEventListener('click', generate);
+        $('btn-coverage-refresh').addEventListener('click', refreshCoverage);
+        $('btn-coverage-add-toggle').addEventListener('click', () => {
+          const el = $('coverage-add');
+          el.style.display = el.style.display === 'none' ? '' : 'none';
+        });
+        $('btn-coverage-cancel').addEventListener('click', () => {
+          $('coverage-add').style.display = 'none';
+          $('coverage-form-status').textContent = '';
+        });
+        $('btn-coverage-save').addEventListener('click', saveCoverageItem);
+
+        const presetRow = $('res-presets');
+        const syncPresetActive = () => {
+          const w = $('p-width').value, h = $('p-height').value;
+          presetRow.querySelectorAll('button').forEach((b) => {
+            b.classList.toggle('active', b.dataset.w === w && b.dataset.h === h);
+          });
+        };
+        presetRow.querySelectorAll('button').forEach((b) => {
+          b.addEventListener('click', () => {
+            $('p-width').value = b.dataset.w;
+            $('p-height').value = b.dataset.h;
+            syncPresetActive();
+          });
+        });
+        $('p-width').addEventListener('input', syncPresetActive);
+        $('p-height').addEventListener('input', syncPresetActive);
+        syncPresetActive();
+
+        $('lightbox').addEventListener('click', (e) => {
+          if (e.target === $('lightbox')) closeLightbox();
+        });
+        $('lightbox-img').addEventListener('click', (e) => {
+          e.stopPropagation();
+          const src = e.currentTarget.dataset.copySrc || e.currentTarget.src;
+          copyImageToClipboard(src);
+        });
+        $('lightbox-close').addEventListener('click', closeLightbox);
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && $('lightbox').classList.contains('open')) closeLightbox();
+        });
+      }
+
+      async function main() {
+        wireEvents();
+        await loadAxes();
+        initCoverageAddForm();
+        await refreshPreview();
+        await refreshHealth();
+        await refreshCoverage();
+        setInterval(refreshHealth, 15000);
+      }
+
+      main().catch((err) => {
+        console.error(err);
+        document.body.insertAdjacentHTML('afterbegin', `<div style="padding:16px;color:var(--bad)">init failed: ${escapeHtml(err.message)}</div>`);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "version": "0.1.0",
+  "_source": "Design/fundamentals/environment.md §8 (thermal), §9 (depth distribution), §12 (anomaly); art_factory_brief.md §3.5/§4",
+  "_depthConvention": "Depth is a negative integer in [-60..-1]. Ranges are written [shallowest, deepest] = [closerToZero, moreNegative]. A depth d is in [a,b] iff b <= d <= a.",
+
+  "thermalZones": [
+    { "id": "Cooling",    "range": [-1, -31] },
+    { "id": "DeepFreeze", "range": [-32, -34] },
+    { "id": "Reheating",  "range": [-35, -60] }
+  ],
+
+  "anomalyIntensity": [
+    { "range": [-1, -11],  "value": 0 },
+    { "range": [-12, -31], "valueRange": [0.1, 0.3] },
+    { "range": [-32, -34], "value": 0.4 },
+    { "range": [-35, -44], "valueRange": [0.5, 0.7] },
+    { "range": [-45, -60], "valueRange": [0.8, 1.0] }
+  ],
+
+  "materialByThermalZone": {
+    "Cooling":    { "forbidden": ["Organic"],            "softMinDepth": { "Ice": -15 } },
+    "DeepFreeze": { "forbidden": ["Organic", "Crystal"] },
+    "Reheating":  { "forbidden": ["Ice"],                "softMinDepth": { "Organic": -45 } }
+  },
+
+  "originDepthRange": {
+    "Natural":             { "range": [-1, -60] },
+    "DwarvenTech":         { "range": [-1, -60] },
+    "DwarvenResidential":  { "range": [-1, -60] },
+    "HumanAdapted":        { "range": [-1, -11], "reason": "human retrofits exist only down to the city zone (-11)" },
+    "HumanFrontier":       { "range": [-6, -20], "reason": "abandoned human outposts below the city, do not penetrate the lower zones" }
+  },
+
+  "occupantDepthRange": {
+    "None":            { "range": [-1, -60] },
+    "Goblins":         { "range": [-6, -20],  "reason": "goblin tribes scavenge the upper-mid zone" },
+    "Ratfolk":         { "range": [-6, -31],  "reason": "ratfolk thrive in the Cooling zone, absent in deepest layers" },
+    "HumanGarrison":   { "range": [-1, -5],   "reason": "city guard patrols only the topmost levels (env.md §2.4)" },
+    "HumanExiles":     { "range": [-12, -44], "reason": "exiles dwell below the point of no return, but cannot survive the deepest reheated zone in numbers" },
+    "DwarvenRemains":  { "range": [-12, -60], "reason": "remains of evacuated dwarves layer the mid and lower depths" },
+    "DeepHostile":     { "range": [-11, -60], "reason": "deep-hostile presence begins after the city zone (-10/-11)" }
+  },
+
+  "lightingByOrigin": {
+    "Natural": { "warn": ["Torches", "DwarvenLanterns"], "reason": "installed light fixtures contradict untouched Natural origin; prefer Campfire / Geothermal / CrystalGlow / NearDark" }
+  },
+
+  "_notes": [
+    "softMinDepth means: material is only plausible at or below the given depth (more negative). Combination above it generates a warning, not a hard reject.",
+    "Range mismatches outside originDepthRange/occupantDepthRange are hard rejects — they break lore.",
+    "Thermal-zone material restrictions are hard rejects unless listed in softMinDepth."
+  ]
+}
