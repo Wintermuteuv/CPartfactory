@@ -1,7 +1,12 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import { resolve, join, dirname } from 'node:path';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { resolve, join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadWorkflowTemplate, applyParams } from './comfyui/workflow.js';
+import { loadWorkflowTemplate, applyParams, applyInitImage, applyStyleReference } from './comfyui/workflow.js';
+
+// img2img denoise when the caller supplies a reference but no explicit strength.
+// 0.5 keeps the reference's composition and palette while letting the prompt
+// meaningfully repaint materials/detail — a sane midpoint for consistency work.
+const DEFAULT_IMG2IMG_DENOISE = 0.5;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..', '..');
@@ -51,6 +56,12 @@ export async function generate({
   height,
   batchSize = 1,
   ckpt,
+  initImage = null,
+  denoise,
+  styleImage = null,
+  styleWeight = 1.0,
+  styleWeightType = 'style transfer',
+  stylePreset = 'PLUS (high strength)',
   templatePath = DEFAULT_TEMPLATE_PATH,
   outputDir = DEFAULT_OUTPUT_DIR,
   axes = null,
@@ -68,6 +79,47 @@ export async function generate({
   const slug = timestampSlug();
   const filenamePrefix = `art-factory/${slug}_seed${resolvedSeed}`;
 
+  // img2img: read the reference from output/, upload it into ComfyUI's input dir.
+  // Only a bare filename inside outputDir is allowed — guard against traversal.
+  const isImg2Img = initImage != null && initImage !== '';
+  const resolvedDenoise = isImg2Img ? (denoise ?? DEFAULT_IMG2IMG_DENOISE) : denoise;
+  let uploadedRef = null;
+  if (isImg2Img) {
+    const safeName = basename(String(initImage));
+    const refPath = join(outputDir, safeName);
+    let bytes;
+    try {
+      bytes = await readFile(refPath);
+    } catch {
+      throw new Error(`generate(): init image not found in output: ${safeName}`);
+    }
+    uploadedRef = await this.client.uploadImage({ bytes, filename: `art-factory-ref-${safeName}` });
+    logger?.info({ initImage: safeName, denoise: resolvedDenoise }, 'img2img: reference uploaded');
+  }
+
+  // IP-Adapter style reference (orthogonal to img2img: patches MODEL, not LATENT).
+  const isStyle = styleImage != null && styleImage !== '';
+  let uploadedStyle = null;
+  let styleName = null;
+  if (isStyle) {
+    if (!(await this.client.hasNode('IPAdapterUnifiedLoader'))) {
+      throw new Error(
+        'IP-Adapter not available: ComfyUI_IPAdapter_plus nodes are not loaded. ' +
+          'Install the custom nodes + models, then restart ComfyUI.',
+      );
+    }
+    styleName = basename(String(styleImage));
+    const stylePath = join(outputDir, styleName);
+    let styleBytes;
+    try {
+      styleBytes = await readFile(stylePath);
+    } catch {
+      throw new Error(`generate(): style image not found in output: ${styleName}`);
+    }
+    uploadedStyle = await this.client.uploadImage({ bytes: styleBytes, filename: `art-factory-style-${styleName}` });
+    logger?.info({ styleImage: styleName, styleWeight, styleWeightType }, 'ip-adapter: style reference uploaded');
+  }
+
   const params = {
     positive,
     negative,
@@ -80,10 +132,23 @@ export async function generate({
     height,
     batchSize,
     ckpt,
+    denoise: resolvedDenoise,
     filenamePrefix,
   };
 
-  const wf = applyParams(template, refs, params);
+  let wf = applyParams(template, refs, params);
+  if (isImg2Img) {
+    wf = applyInitImage(wf, refs, { imageName: uploadedRef.name, subfolder: uploadedRef.subfolder });
+  }
+  if (isStyle) {
+    wf = applyStyleReference(wf, refs, {
+      imageName: uploadedStyle.name,
+      subfolder: uploadedStyle.subfolder,
+      preset: stylePreset,
+      weight: styleWeight,
+      weightType: styleWeightType,
+    });
+  }
   const finalSampler = wf[refs.sampler].inputs;
   const finalLatent = wf[refs.latent].inputs;
   const finalCkpt = wf[refs.checkpoint].inputs.ckpt_name;
@@ -122,10 +187,17 @@ export async function generate({
         cfg: finalSampler.cfg,
         sampler: finalSampler.sampler_name,
         scheduler: finalSampler.scheduler,
+        denoise: finalSampler.denoise,
         width: finalLatent.width,
         height: finalLatent.height,
         batchSize: finalLatent.batch_size,
       },
+      img2img: isImg2Img
+        ? { initImage: basename(String(initImage)), denoise: finalSampler.denoise }
+        : null,
+      ipAdapter: isStyle
+        ? { styleImage: styleName, weight: styleWeight, weightType: styleWeightType, preset: stylePreset }
+        : null,
       checkpoint: finalCkpt,
       styleVersion: 'none',
       stage,
@@ -143,7 +215,15 @@ export async function generate({
 
   const durationMs = Date.now() - startedAt;
   logger?.info({ promptId, count: saved.length, durationMs }, 'generation complete');
-  return { promptId, clientId, durationMs, images: saved, seed: resolvedSeed };
+  return {
+    promptId,
+    clientId,
+    durationMs,
+    images: saved,
+    seed: resolvedSeed,
+    img2img: isImg2Img ? { initImage: basename(String(initImage)), denoise: finalSampler.denoise } : null,
+    ipAdapter: isStyle ? { styleImage: styleName, weight: styleWeight, weightType: styleWeightType } : null,
+  };
 }
 
 export class Generator {

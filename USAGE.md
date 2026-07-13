@@ -49,6 +49,26 @@ npm start
 
 ---
 
+## 2.1 Reference — img2img и style (IP-Adapter)
+
+Блок **Reference · img2img / style** (под Params) — генерация с опорой на ранее сгенерённый арт. Лента показывает последние арты из `output/`; клик по превью выбирает референс, повторный — снимает. Кнопка **use as reference →** на панели результата берёт только что сгенерённую картинку.
+
+Переключатель **Mode**:
+
+- **img2img** — дорабатывает сам референс. Латент берётся из картинки (не из пустого), слайдер **Denoise** задаёт силу изменений: `0.3` держит композицию и палитру, `0.7` перерисовывает сильнее. Оси/промпт по-прежнему управляют содержанием. Размер выхода = размеру референса (W/H из Params игнорируются). Ничего доставлять не нужно.
+- **style · IP-Adapter** — переносит *стиль/облик* референса на новую сцену, собранную из осей (сам референс не воспроизводится). Слайдер **Style weight** (сила переноса) + **Weight type** (`style transfer` — оптимум для единого стиля на разные сцены; `strong style transfer` / `style and composition` — сильнее/захватывает и композицию). Пресет — `PLUS (high strength)` для SDXL.
+
+img2img и style **ортогональны** и складываются: img2img меняет латент, IP-Adapter — модель. Можно держать планировку через img2img и одновременно лочить стиль через IP-Adapter.
+
+**IP-Adapter требует зависимостей в ComfyUI** (устанавливаются один раз):
+- кастом-ноды `ComfyUI_IPAdapter_plus` в `custom_nodes/`;
+- `models/ipadapter/ip-adapter-plus_sdxl_vit-h.safetensors`;
+- `models/clip_vision/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors`.
+
+Если ноды не загружены, пилюля возможностей выключает режим style и показывает подсказку «перезапусти ComfyUI». Бэкенд отдаёт `capabilities.ipAdapter` в `/healthz`; при попытке style без нод `/generate` вернёт понятную ошибку, а не крэш. IP-Adapter добавляет ~1.5 ГБ VRAM поверх SDXL.
+
+---
+
 ## 3. Coverage (чек-лист покрытия)
 
 Внизу страницы — таблица всех сцен, которые нужно покрыть артами (на основе `environment.md §3+§9`).
@@ -130,12 +150,13 @@ art-factory/
 
 | Метод | Путь | Назначение |
 |-------|------|-----------|
-| GET  | `/healthz`              | состояние backend + ComfyUI |
+| GET  | `/healthz`              | состояние backend + ComfyUI + `capabilities.ipAdapter` |
 | GET  | `/axes`                 | оси + базовый стиль для UI-дропдаунов |
 | POST | `/axes/derive`          | `{depth}` → `{thermalZone, anomalyIntensity}` |
 | POST | `/axes/validate`        | `{material, spaceType, origin, occupant, depth}` → `{ok, errors[], warnings[], derived}` |
 | POST | `/prompt/preview`       | то же + сборка промпта без генерации |
-| POST | `/generate`             | принимает `{axes:{...}}` ИЛИ `{positive:"..."}`. Поля: seed/steps/cfg/sampler/scheduler/width/height/batchSize/ckpt/force/stage |
+| POST | `/generate`             | принимает `{axes:{...}}` ИЛИ `{positive:"..."}`. Поля: seed/steps/cfg/sampler/scheduler/width/height/batchSize/ckpt/force/stage. **img2img:** `initImage` (имя файла из `output/`) + `denoise`. **IP-Adapter:** `styleImage` + `styleWeight` + `styleWeightType` |
+| GET  | `/outputs?limit=N`      | последние арты из `output/` (для пикера референса) |
 | GET  | `/progress/active`      | прогресс текущей генерации `{value, max, node, status}` |
 | GET  | `/progress/:promptId`   | прогресс конкретной |
 | GET  | `/coverage`             | пункты + counts |
@@ -169,6 +190,6 @@ curl -X POST http://127.0.0.1:5174/generate `
 ## 8. Что ещё в плане
 
 - **5** — батч N вариантов → галерея → выбор лучшего
-- **5.1** — upscale-pass (4x-UltraSharp) + IP-Adapter для консистентности стиля
+- **5.1** — upscale-pass (4x-UltraSharp). ✅ IP-Adapter для консистентности стиля — сделано (см. §2.1); img2img-плечо — сделано
 - **6** — финализация: seed-lock выбранного + имя `art_<material>_<space>_<origin>_<occupant>_d<depth>_seed<N>.png`
 - **7** — гибрид-плечо: финализация Flux на арендованной GPU

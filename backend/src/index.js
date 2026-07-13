@@ -15,7 +15,8 @@ import { computeCoverage } from './coverage/scanner.js';
 import { ComfyWSClient } from './comfyui/wsclient.js';
 import { ProgressTracker } from './progress.js';
 
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readdir, stat } from 'node:fs/promises';
+import { join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const frontendDir = resolve(__dirname, '..', '..', 'frontend');
@@ -172,6 +173,11 @@ app.post('/generate', async (req, reply) => {
       height: body.height,
       batchSize: body.batchSize,
       ckpt: body.ckpt,
+      initImage: body.initImage,
+      denoise: body.denoise,
+      styleImage: body.styleImage,
+      styleWeight: body.styleWeight,
+      styleWeightType: body.styleWeightType,
       axes: axesPayload,
       derived: derivedPayload,
       optimizer: optimizerPayload,
@@ -185,11 +191,45 @@ app.post('/generate', async (req, reply) => {
   }
 });
 
+// Recent generated arts, newest first — feeds the img2img reference picker.
+app.get('/outputs', async (req) => {
+  const limit = Math.min(Number(req.query?.limit) || 24, 200);
+  let names = [];
+  try {
+    names = (await readdir(outputDir)).filter((n) => n.toLowerCase().endsWith('.png'));
+  } catch {
+    return { items: [] };
+  }
+  const withTime = await Promise.all(
+    names.map(async (name) => {
+      try {
+        const s = await stat(join(outputDir, name));
+        return { name, mtimeMs: s.mtimeMs };
+      } catch {
+        return null;
+      }
+    }),
+  );
+  const items = withTime
+    .filter(Boolean)
+    .sort((a, b) => b.mtimeMs - a.mtimeMs)
+    .slice(0, limit)
+    .map((f) => ({
+      filename: f.name,
+      url: `/images/${encodeURIComponent(f.name)}`,
+      createdAt: new Date(f.mtimeMs).toISOString(),
+    }));
+  return { items };
+});
+
 app.get('/healthz', async () => {
   const comfyStatus = await comfy.ping();
+  // IP-Adapter is optional (custom nodes); probe only when ComfyUI is reachable.
+  const ipAdapter = comfyStatus.ok ? await comfy.hasNode('IPAdapterUnifiedLoader') : false;
   return {
     backend: { ok: true, uptimeSec: Math.round(process.uptime()) },
     comfyui: comfyStatus,
+    capabilities: { ipAdapter },
     status: comfyStatus.ok ? 'ready' : 'degraded',
   };
 });

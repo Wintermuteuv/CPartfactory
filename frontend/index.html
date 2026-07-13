@@ -449,6 +449,43 @@
         width: 60px;
         text-align: center;
       }
+
+      .ref-strip {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding: 6px;
+        background: var(--panel);
+        border: 1px solid var(--border-strong);
+        border-radius: 4px;
+        min-height: 68px;
+      }
+      .ref-strip .placeholder { color: var(--muted); font-size: 11px; padding: 18px 8px; }
+      .ref-thumb {
+        flex: 0 0 auto;
+        width: 56px; height: 56px;
+        border-radius: 3px;
+        border: 2px solid transparent;
+        object-fit: cover;
+        cursor: pointer;
+        opacity: 0.85;
+      }
+      .ref-thumb:hover { opacity: 1; }
+      .ref-thumb.selected { border-color: var(--accent, #c2956a); opacity: 1; }
+      .ref-selected-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .ref-selected-bar .name { color: var(--text); word-break: break-all; }
+      .ref-selected-bar.hidden { display: none; }
+      .row.hidden { display: none; }
+      #ref-denoise-val, #ref-weight-val { font-variant-numeric: tabular-nums; color: var(--text); }
+      #ref-mode button.active { border-color: var(--accent, #c2956a); color: var(--text); }
+      #ref-mode button:disabled { opacity: 0.4; cursor: not-allowed; }
     </style>
   </head>
   <body>
@@ -592,6 +629,51 @@
               <label>Height</label>
               <input type="number" id="p-height" value="1024" min="256" max="1536" step="64" />
             </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Reference · img2img / style</h2>
+          <div class="field">
+            <label>Ранние арты <span class="hint">клик = референс, повтор = снять</span></label>
+            <div class="ref-strip" id="ref-strip"><span class="placeholder">loading…</span></div>
+          </div>
+          <div class="ref-selected-bar hidden" id="ref-selected-bar">
+            reference: <span class="name" id="ref-selected-name">—</span>
+            <button type="button" id="ref-clear" style="margin-left:auto;padding:2px 8px;font-size:10px;">clear</button>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <div class="field">
+              <label>Mode</label>
+              <div class="preset-row" id="ref-mode">
+                <button type="button" data-mode="img2img" class="active" title="доработать сам референс">img2img</button>
+                <button type="button" data-mode="style" title="перенести стиль референса на новую сцену из осей">style · IP-Adapter</button>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="ref-img2img-ctl">
+            <div class="field">
+              <label>Denoise <span class="hint">0.3 держит форму · 0.7 сильнее меняет</span> <span id="ref-denoise-val">0.50</span></label>
+              <input type="range" id="ref-denoise" min="0.2" max="0.9" step="0.05" value="0.5" disabled />
+            </div>
+          </div>
+          <div class="row hidden" id="ref-style-ctl">
+            <div class="field">
+              <label>Style weight <span class="hint">сила переноса</span> <span id="ref-weight-val">1.00</span></label>
+              <input type="range" id="ref-weight" min="0" max="1.5" step="0.05" value="1.0" disabled />
+            </div>
+            <div class="field">
+              <label>Weight type</label>
+              <select id="ref-weight-type" disabled>
+                <option value="style transfer">style transfer</option>
+                <option value="linear">linear</option>
+                <option value="strong style transfer">strong style transfer</option>
+                <option value="style and composition">style and composition</option>
+              </select>
+            </div>
+          </div>
+          <div class="hint" id="ref-ipa-warn" style="display:none;color:var(--warn);margin-top:6px;">
+            IP-Adapter недоступен — перезапусти ComfyUI, чтобы подхватить ноды.
           </div>
         </div>
       </section>
@@ -739,6 +821,9 @@
         currentValidation: null,
         currentBuiltPositive: '',
         promptDirty: false,
+        refImage: null, // selected reference filename, or null for plain text2img
+        refMode: 'img2img', // 'img2img' | 'style'
+        ipAdapterAvailable: false,
       };
 
       function selectedAxes() {
@@ -1009,6 +1094,76 @@
         }
       }
 
+      // --- img2img reference picker ---
+      async function refreshOutputs() {
+        const strip = $('ref-strip');
+        try {
+          const res = await fetch('/outputs?limit=24', { cache: 'no-store' });
+          const data = await res.json();
+          const items = data.items ?? [];
+          if (items.length === 0) {
+            strip.innerHTML = '<span class="placeholder">пока нет артов — сгенерируй хоть один</span>';
+            return;
+          }
+          strip.innerHTML = items.map((it) =>
+            `<img class="ref-thumb${state.refImage === it.filename ? ' selected' : ''}" ` +
+            `src="${it.url}" title="${escapeHtml(it.filename)}" data-name="${escapeHtml(it.filename)}" loading="lazy" />`
+          ).join('');
+          strip.querySelectorAll('.ref-thumb').forEach((img) => {
+            img.addEventListener('click', () => toggleRef(img.dataset.name));
+          });
+        } catch {
+          strip.innerHTML = '<span class="placeholder">load failed</span>';
+        }
+      }
+
+      function toggleRef(name) {
+        state.refImage = state.refImage === name ? null : name;
+        syncRefUI();
+      }
+
+      function setRef(name) {
+        state.refImage = name;
+        syncRefUI();
+      }
+
+      function setRefMode(mode) {
+        if (mode === 'style' && !state.ipAdapterAvailable) return;
+        state.refMode = mode;
+        $('ref-mode').querySelectorAll('button').forEach((b) => {
+          b.classList.toggle('active', b.dataset.mode === mode);
+        });
+        $('ref-img2img-ctl').classList.toggle('hidden', mode !== 'img2img');
+        $('ref-style-ctl').classList.toggle('hidden', mode !== 'style');
+        syncRefUI();
+      }
+
+      function syncRefUI() {
+        const bar = $('ref-selected-bar');
+        const on = !!state.refImage;
+        if (on) {
+          $('ref-selected-name').textContent = state.refImage;
+          bar.classList.remove('hidden');
+        } else {
+          bar.classList.add('hidden');
+        }
+        // enable only the active mode's controls, and only when a ref is selected
+        $('ref-denoise').disabled = !(on && state.refMode === 'img2img');
+        $('ref-weight').disabled = !(on && state.refMode === 'style');
+        $('ref-weight-type').disabled = !(on && state.refMode === 'style');
+        $('ref-strip').querySelectorAll('.ref-thumb').forEach((img) => {
+          img.classList.toggle('selected', img.dataset.name === state.refImage);
+        });
+      }
+
+      function applyIpAdapterCapability(available) {
+        state.ipAdapterAvailable = available;
+        const styleBtn = $('ref-mode').querySelector('button[data-mode="style"]');
+        styleBtn.disabled = !available;
+        $('ref-ipa-warn').style.display = available ? 'none' : '';
+        if (!available && state.refMode === 'style') setRefMode('img2img');
+      }
+
       function buildCheckboxGroup(containerId, axisValues) {
         const el = document.getElementById(containerId);
         el.innerHTML = axisValues.map((v) =>
@@ -1070,6 +1225,7 @@
           const pill = $('health-pill');
           pill.className = 'pill ' + (data.status === 'ready' ? 'ok' : 'bad');
           pill.textContent = data.status;
+          applyIpAdapterCapability(!!data.capabilities?.ipAdapter);
         } catch {
           $('health-text').textContent = 'backend down';
           $('health-pill').className = 'pill bad';
@@ -1146,9 +1302,27 @@
           ['Thermal zone', derived.thermalZone ?? '—'],
           ['Anomaly', derived.anomalyIntensity != null ? derived.anomalyIntensity.toFixed(2) : '—'],
         ];
+        if (result.img2img) {
+          rows.push(['Mode', `img2img (denoise ${result.img2img.denoise}, ref ${result.img2img.initImage})`]);
+        }
+        if (result.ipAdapter) {
+          rows.push(['IP-Adapter', `${result.ipAdapter.weightType} · w${result.ipAdapter.weight} · ref ${result.ipAdapter.styleImage}`]);
+        }
         $('result-meta').innerHTML = rows
           .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`)
           .join('');
+        if (first) {
+          const useBtn = document.createElement('button');
+          useBtn.type = 'button';
+          useBtn.textContent = 'use as reference →';
+          useBtn.style.cssText = 'margin-top:10px;font-size:11px;';
+          useBtn.addEventListener('click', async () => {
+            await refreshOutputs();
+            setRef(first.filename);
+            $('result-image').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          });
+          $('result-meta').appendChild(useBtn);
+        }
       }
 
       let progressPollTimer = null;
@@ -1210,6 +1384,16 @@
         }
         const negativeManual = $('prompt-negative').value.trim();
         if (negativeManual) body.negative = negativeManual;
+        if (state.refImage) {
+          if (state.refMode === 'style') {
+            body.styleImage = state.refImage;
+            body.styleWeight = Number($('ref-weight').value);
+            body.styleWeightType = $('ref-weight-type').value;
+          } else {
+            body.initImage = state.refImage;
+            body.denoise = Number($('ref-denoise').value);
+          }
+        }
 
         const startedAt = Date.now();
         try {
@@ -1227,6 +1411,7 @@
           status.innerHTML = `<span style="color:var(--ok)">done in ${elapsed}s</span>`;
           renderResult(data);
           refreshCoverage();
+          refreshOutputs();
         } catch (err) {
           status.innerHTML = `<span style="color:var(--bad)">${escapeHtml(err.message)}</span>`;
         } finally {
@@ -1264,6 +1449,16 @@
           $('prompt-positive').value = state.currentBuiltPositive;
           markDirty(false);
         });
+        $('ref-denoise').addEventListener('input', () => {
+          $('ref-denoise-val').textContent = Number($('ref-denoise').value).toFixed(2);
+        });
+        $('ref-weight').addEventListener('input', () => {
+          $('ref-weight-val').textContent = Number($('ref-weight').value).toFixed(2);
+        });
+        $('ref-mode').querySelectorAll('button').forEach((b) => {
+          b.addEventListener('click', () => setRefMode(b.dataset.mode));
+        });
+        $('ref-clear').addEventListener('click', () => setRef(null));
         $('opt-force').addEventListener('change', updateGenerateButton);
         $('btn-random').addEventListener('click', randomizeAxes);
         $('btn-generate').addEventListener('click', generate);
@@ -1317,6 +1512,7 @@
         await refreshPreview();
         await refreshHealth();
         await refreshCoverage();
+        await refreshOutputs();
         setInterval(refreshHealth, 15000);
       }
 
